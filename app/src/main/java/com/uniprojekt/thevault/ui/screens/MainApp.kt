@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
 import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
 import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 
@@ -37,6 +38,11 @@ fun MainApp(
                 // ShakeDecrypt, andere Platzhalter werden nich immer angezeigt
                 if (state.name == "ShakeDecrypt") {
                     ShakeDecryptScreen(
+                        onComplete = { viewModel.completeCurrentMinigame() },
+                        onFail = { viewModel.triggerGameOver(isWin = false) }
+                    )
+                } else if (state.name == "LockPick") {
+                    LockpickScreen(
                         onComplete = { viewModel.completeCurrentMinigame() },
                         onFail = { viewModel.triggerGameOver(isWin = false) }
                     )
