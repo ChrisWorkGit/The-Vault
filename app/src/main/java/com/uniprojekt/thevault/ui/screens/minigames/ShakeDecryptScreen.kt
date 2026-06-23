@@ -25,6 +25,11 @@ import kotlin.random.Random
  * Je schneller/öfter geschüttelt wird, desto schneller ist der Code vollständig "entschlüsselt".
  * ACHTUNG: Diese Implementierung ist für ein einzelnes Gerät. Eine echte Mehrspielerfunktionalität ist hier noch nicht enthalten.
  */
+
+private const val SHAKE_THRESHOLD = 2.7f
+private const val MIN_SHAKE_INTERVALS_MS = 150L
+private const val PROGRESS_PER_SHAKE = 0.05f
+
 @Composable
 fun ShakeDecryptScreen(
     onComplete: () -> Unit,
@@ -45,9 +50,6 @@ fun ShakeDecryptScreen(
     var isComplete by remember { mutableStateOf(false) }
     var lastShakeTime by remember { mutableLongStateOf(0L) }
 
-    val shakeThreshold = 2.7f
-    val minShakeIntervalMs = 150L
-    val progressPerShake = 0.05f
 
     DisposableEffect(hasSensor) {
         if (!hasSensor) {
@@ -64,9 +66,9 @@ fun ShakeDecryptScreen(
                 val gForce = sqrt(gX * gX + gY * gY + gZ * gZ)
 
                 val now = System.currentTimeMillis()
-                if (gForce > shakeThreshold && now - lastShakeTime > minShakeIntervalMs) {
+                if (gForce > SHAKE_THRESHOLD && now - lastShakeTime > MIN_SHAKE_INTERVALS_MS) {
                     lastShakeTime = now
-                    progress = (progress + progressPerShake).coerceAtMost(1f)
+                    progress = (progress + PROGRESS_PER_SHAKE).coerceAtMost(1f)
                     if (progress >= 1f) {
                         isComplete = true
                     }
@@ -135,7 +137,7 @@ fun ShakeDecryptScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = {
                 if (!isComplete) {
-                    progress = (progress + progressPerShake).coerceAtMost(1f)
+                    progress = (progress + PROGRESS_PER_SHAKE).coerceAtMost(1f)
                     if (progress >= 1f) isComplete = true
                 }
             }) {
