@@ -26,7 +26,10 @@ import kotlin.random.Random
  * ACHTUNG: Diese Implementierung ist für ein einzelnes Gerät. Eine echte Mehrspielerfunktionalität ist hier noch nicht enthalten.
  */
 @Composable
-fun ShakeDecryptScreen() {
+fun ShakeDecryptScreen(
+    onComplete: () -> Unit,
+    onFail: () -> Unit      // TODO: Punkteabzug? nur anderen Zwischenscreen anzeigen? Anderen Weg zum Tresor? Game OVer?
+) {
     val context = LocalContext.current
     val sensorManager = remember {
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -35,6 +38,8 @@ fun ShakeDecryptScreen() {
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     }
     val hasSensor = accelerometer != null
+
+    val secretCode = remember { (1000..9999).random().toString() }
 
     var progress by remember { mutableFloatStateOf(0f) }
     var isComplete by remember { mutableStateOf(false) }
@@ -78,6 +83,29 @@ fun ShakeDecryptScreen() {
         }
     }
 
+    LaunchedEffect(isComplete) {
+        if (isComplete) {
+            delay(800)
+            onComplete()
+        }
+    }
+
+    // "Verschlüsselte" Darstellung
+    var glitchTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (!isComplete) {
+            delay(80)
+            glitchTick++
+        }
+    }
+
+    val revealedCount = (progress * secretCode.length).toInt().coerceIn(0, secretCode.length)
+    val displayedCode = remember(revealedCount, glitchTick, isComplete) {
+        secretCode.mapIndexed { index, digit ->
+            if (index < revealedCount) digit else Random.nextInt(0, 10).digitToChar()
+        }.joinToString("")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -88,6 +116,11 @@ fun ShakeDecryptScreen() {
         Text(text = "Code entschlüsseln", fontSize = 18.sp)
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = "Schüttle das Handy so schnell wie möglich!", fontSize = 14.sp)
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = displayedCode,
+            fontSize = 48.sp,
+        )
         Spacer(modifier = Modifier.height(32.dp))
         LinearProgressIndicator(
             progress = { progress },
