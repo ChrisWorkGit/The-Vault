@@ -13,7 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 /**
  * Minispiel "ShakeDecrypt".
@@ -93,5 +95,19 @@ fun ShakeDecryptScreen() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = "${(progress * 100).toInt()}% entschlüsselt")
+
+        if (!hasSensor) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(text = "Kein Bewegungssensor gefunden - Simulation für Tests:")
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = {
+                if (!isComplete) {
+                    progress = (progress + progressPerShake).coerceAtMost(1f)
+                    if (progress >= 1f) isComplete = true
+                }
+            }) {
+                Text(text = "Schütteln simulieren")
+            }
+        }
     }
 }
