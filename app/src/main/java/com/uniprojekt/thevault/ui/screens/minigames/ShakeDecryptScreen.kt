@@ -5,8 +5,14 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.sqrt
 
 /**
@@ -68,5 +74,24 @@ fun ShakeDecryptScreen() {
         onDispose {
             sensorManager.unregisterListener(listener)
         }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Code entschlüsseln", fontSize = 18.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Schüttle das Handy so schnell wie möglich!", fontSize = 14.sp)
+        Spacer(modifier = Modifier.height(32.dp))
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth(0.7f)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "${(progress * 100).toInt()}% entschlüsselt")
     }
 }
