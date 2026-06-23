@@ -48,3 +48,20 @@ In diesem Dokument wird die Nutzung von künstlicher Intelligenz (LLMs) im Entwi
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Das Team definierte die präzisen Anforderungen an die State Machine und die gewünschte Architektur. Nach der Generierung durch die KI wurden die Build-Konfigurationen (Gradle) manuell überprüft und korrigiert, um die Kompatibilität der Bibliotheken (insbesondere ViewModel-Compose) sicherzustellen. Zudem wurde die Integration in die `MainActivity` sowie die Bereinigung alter Package-Strukturen vorgenommen.
+
+### 🔹 Referenz: [REF-ISSUE13-LOCKPICK-DIETRICH-SHAPE]
+* **Datum:** 23.6.2026
+* **Genutztes Tool:** Claude (Claude.ai, Sonnet 4.6)
+* **Betroffene Dateien:**
+  * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/LockpickScreen.kt`
+* **Inhalt/Ziel:** Anpassung der Zeichnung des Dietrich-Hakens im Lockpicking-Minispiel: statt einer geraden/gebogenen Linie mit Pfeilspitze wird nun die charakteristische L-Form eines echten Dietrichs (langer Griff + kurze abgewinkelte Spitze) nachgebildet.
+
+#### Verwendeter Prompt:
+> Ändere den gezeichneten Dietrich von dem geraden Strich in die Form des bereitgestellten Bildes.
+>
+> *(Anhang: Referenzfoto eines echten Dietrich-/Spannhakens, `LockPick.png`)*
+> 
+> *(Anhang: Dokumentations Richtlinien für KI Nutzung, `AI_RULES.txt`)*
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Bereitstellung des Referenzfotos zur Formvorgabe. Visuelle Prüfung des Ergebnisses auf einem Testgerät und Feinjustierung der Konstanten `bendX`, `bendY` und `handleX` (Winkel/Länge des Knicks) zur besseren Annäherung an die Vorlage.
