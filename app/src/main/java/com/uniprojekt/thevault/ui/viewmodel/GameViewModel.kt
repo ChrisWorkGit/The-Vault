@@ -36,7 +36,7 @@ class GameViewModel : ViewModel() {
     }
 
     // Liste der Dummy-Minispiele für den Prototyp
-    private val minigames = listOf("Gyro-Lock", "Laser Barrier", "Voice Scanner", "Final Swipe")
+    private val minigames = listOf("Gyro-Lock", "Laser Barrier", "Voice Scanner", "Final Swipe", "ShakeDecrypt")
 
     // Interner State der State Machine
     private val _gameState = MutableStateFlow<GameState>(GameState.Lobby)
