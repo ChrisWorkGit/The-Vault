@@ -202,7 +202,7 @@ fun HostQrView(ip: String, context: Context) {
         Box(
             modifier = Modifier
                 .size(210.dp)
-                .background(NeonGreen)
+                .border(2.dp, NeonGreen) // Neon Rahmen um den QR Code
                 .padding(5.dp)
         ) {
             Image(

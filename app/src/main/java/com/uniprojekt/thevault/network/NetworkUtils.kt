@@ -40,18 +40,25 @@ object NetworkUtils {
     }
 
     /**
-     * Generiert eine QR-Code Bitmap aus einem gegebenen Text.
+     * Generiert eine QR-Code Bitmap aus einem gegebenen Text im Cyberpunk-Stil.
      * @param text Der zu kodierende Text (z.B. IP-Adresse).
      * @param size Die Größe des Quadrats in Pixeln.
+     * @param moduleColor Farbe der QR-Module (Standard Neon-Grün).
+     * @param backgroundColor Hintergrundfarbe (Standard Schwarz).
      * @return Eine Bitmap des QR-Codes.
      */
-    fun generateQrCode(text: String, size: Int = 512): Bitmap {
+    fun generateQrCode(
+        text: String, 
+        size: Int = 512, 
+        moduleColor: Int = 0xFF00FF66.toInt(), 
+        backgroundColor: Int = 0xFF040805.toInt()
+    ): Bitmap {
         val writer = QRCodeWriter()
         val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, size, size)
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         for (x in 0 until size) {
             for (y in 0 until size) {
-                bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE)
+                bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) moduleColor else backgroundColor)
             }
         }
         return bitmap
