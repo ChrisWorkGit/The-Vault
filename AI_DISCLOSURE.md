@@ -48,3 +48,30 @@ In diesem Dokument wird die Nutzung von künstlicher Intelligenz (LLMs) im Entwi
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Das Team definierte die präzisen Anforderungen an die State Machine und die gewünschte Architektur. Nach der Generierung durch die KI wurden die Build-Konfigurationen (Gradle) manuell überprüft und korrigiert, um die Kompatibilität der Bibliotheken (insbesondere ViewModel-Compose) sicherzustellen. Zudem wurde die Integration in die `MainActivity` sowie die Bereinigung alter Package-Strukturen vorgenommen.
+
+### 🔹 Referenz: [REF-ISSUE10-NET-BASE]
+* **Datum:** 15.6.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/StartScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+* **Inhalt/Ziel:** Implementierung der P2P-Socket-Basis für den lokalen Multiplayer, inkl. Host/Client-Logik und Handshake.
+
+#### Verwendeter Prompt:
+> Setze bitte folgende Aufgaben um:
+> 1. StartScreen Erweiterung: Füge der bestehenden UI (Lobby/StartScreen) zwei klare Optionen hinzu: "Als Host starten" und "Als Client beitreten".
+> 2. Netzwerk-Handler (Hintergrund): 
+>    - Erstelle eine Klasse/Objekt (z.B. `NetworkManager`), die Coroutines (`Dispatchers.IO`) nutzt, um Netzwerkoperationen blockierungsfrei im Hintergrund auszuführen.
+>    - Wenn "Host": Starte einen `ServerSocket` auf einem festen Port (z.B. 8888) und warte auf eingehende Verbindungen.
+>    - Wenn "Client": Öffne einen `Socket` zu einer (vorerst hardcodierten oder per Textfeld eingegebenen) Host-IP-Adresse auf Port 8888.
+> 3. Einfacher Text-Handshake:
+>    - Sobald die Verbindung steht, sendet der Client sofort den String "Hello Vault" an den Server.
+>    - Der Server liest diesen String, loggt ihn und sendet als Bestätigung "Access Granted" zurück.
+> 4. GameViewModel-Anbindung:
+>    - Der Verbindungsstatus (z. B. "Suche...", "Verbunden", "Handshake erfolgreich") muss als State im GameViewModel (oder einer separaten NetworkState-Klasse) gehalten und an den MainApp-Screen-Wechsler gemeldet werden.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Vorgabe des Handshake-Protokolls ("Hello Vault" / "Access Granted") und Definition des Port 8888. Das Team hat die UI-Anforderungen für den StartScreen spezifiziert (IP-Eingabefeld).
+

@@ -1,10 +1,14 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
+// PROMPT-REFERENZ: [REF-ISSUE10-NET-BASE]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.uniprojekt.thevault.network.NetworkManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * GameViewModel verwaltet den globalen Spielzustand und die State Machine von "The Vault".
@@ -33,6 +37,48 @@ class GameViewModel : ViewModel() {
          * @param isWin True, wenn der Tresor erfolgreich geknackt wurde.
          */
         data class GameOver(val isWin: Boolean) : GameState
+    }
+
+    // AI-Generated: Local P2P Socket Foundation
+
+    private val _networkStatus = MutableStateFlow("Bereit für Verbindung")
+    /** Aktueller Status der Netzwerkverbindung als Text. */
+    val networkStatus: StateFlow<String> = _networkStatus.asStateFlow()
+
+    private val _isConnected = MutableStateFlow(false)
+    /** Gibt an, ob der Handshake erfolgreich abgeschlossen wurde. */
+    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+    /**
+     * Startet den Hosting-Prozess im Hintergrund.
+     */
+    fun startHosting() {
+        viewModelScope.launch {
+            NetworkManager.startHost(
+                onStatusUpdate = { _networkStatus.value = it },
+                onHandshakeDone = { success -> 
+                    _isConnected.value = success
+                    if (success) startGame() // Testweise direkt starten bei Erfolg
+                }
+            )
+        }
+    }
+
+    /**
+     * Versucht einer bestehenden Session beizutreten.
+     * @param ip Die IP-Adresse des Hosts.
+     */
+    fun joinGame(ip: String) {
+        viewModelScope.launch {
+            NetworkManager.connectToHost(
+                hostIp = ip,
+                onStatusUpdate = { _networkStatus.value = it },
+                onHandshakeDone = { success -> 
+                    _isConnected.value = success
+                    if (success) startGame() // Testweise direkt starten bei Erfolg
+                }
+            )
+        }
     }
 
     // Liste der Dummy-Minispiele für den Prototyp
