@@ -21,6 +21,10 @@ For our university grading, we must seamlessly document all AI usage. Whenever y
    - Write professional KDoc/JavaDoc comments for all new classes, interfaces, and public functions.
    - Add concise, clear inline comments in German (Deutsch) for complex algorithmic steps or hardware sensor handling so the team can easily explain the code during the university pitch.
 
+4. DESIGN ADHERENCE (CYBERPUNK LOOK):
+   - You MUST strictly follow the 'DESIGN_GUIDELINES.md' for all UI-related tasks.
+   - If a specific UI element or styling is not detailed enough in 'DESIGN_GUIDELINES.md', you MUST ask the user for clarification before making assumptions.
+
 Example of how the top of a file should look after your output:
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
 // PROMPT-REFERENZ: [REF-ISSUE12-LIGHT-SENSOR]

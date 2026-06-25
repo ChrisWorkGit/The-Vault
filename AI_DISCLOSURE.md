@@ -178,3 +178,31 @@ Integration der Kamera-Vorschau in die Compose-UI via `AndroidView`. Definition 
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Vorgabe des Datenmodells (Session vs. Result) und des dezentralen Speicheransatzes. Festlegung des `additionalMetrics`-Feldes als JSON-String zur Vermeidung von Schema-Migrationen bei neuen kooperativen Minispielen. Zudem wurde eine Fehleranalyse bei der KSP-Kompilierung ("unexpected jvm signature V") durchgeführt und durch ein Upgrade auf Room 2.8.4 sowie die Anpassung der KSP-Version auf 2.2.10-2.0.2 erfolgreich behoben. Ergänzend wurden Manifest-Einträge für Hardware-Features hinzugefügt, um Lint-Fehler beim Kamera-Onboarding zu beseitigen.
+
+### 🔹 Referenz: [REF-ISSUE20-CYBERPUNK-THEME]
+* **Datum:** 26.6.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/Color.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/Type.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/Theme.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/CyberpunkUI.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/ScannerScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/StartScreen.kt`
+* **Inhalt/Ziel:** Umsetzung des globalen UI-Designsystems und einheitlichen Visual-Looks (Matrix- / Cyberpunk-Hacker-Look) für das gesamte Projekt, inklusive Anpassung des Start- und Scanner-Screens basierend auf Figma-Mockups.
+
+#### Verwendeter Prompt:
+> Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+> Die neue Referenz-ID für diese Aufgabe lautet: [REF-ISSUE20-CYBERPUNK-THEME]
+> 
+> Setze nun das globale UI-Designsystem und den einheitlichen Visual-Look für unser Android-Projekt "The Vault" (com.uniprojekt.thevault) in Jetpack Compose um. Dieses Update beinhaltet die Definition des Themes sowie die exakte optische Anpassung des Start- und Scanner-Screens basierend auf unseren Figma-Mockups (Referenzdatei: image_3f2bea.jpg).
+> 
+> ANFORDERUNGEN & VISUELLER STIL (MATRIX- / CYBERPUNK-HACKER-LOOK):
+> 1. Globale Farbpalette & Typografie (Color.kt, Theme.kt, Type.kt)
+> 2. Cyberpunk-Komponenten (Shapes & Custom Modifiers)
+> 3. Exakte Umsetzung des Scanners (ScannerScreen.kt / "INFILTRATE") basierend auf image_3f2bea.jpg
+> 4. Anpassung des Startbildschirms (StartScreen.kt)
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Bereitstellung der Design-Referenz (Figma-Mockup `image_3f2bea.jpg`) und Definition des genauen Farbschemas. Das Team erstellte die `DESIGN_GUIDELINES.md` als verbindliche Vorgabe für die KI. Die KI wurde instruiert, diese Richtlinien strikt einzuhalten und bei gestalterischen Unklarheiten, die nicht in der Dokumentation abgedeckt sind, explizit Rücksprache mit dem Team zu halten. Zudem validierte das Team die Performance der Animationen und die Scannbarkeit des neongrünen QR-Codes auf schwarzem Hintergrund. Es wurden Kompilierfehler durch das Hinzufügen fehlender Material-Icons-Abhängigkeiten sowie die Aktualisierung veralteter Icon-Referenzen behoben.
+
