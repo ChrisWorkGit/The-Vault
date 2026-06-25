@@ -1,10 +1,14 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
 // PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
+// PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uniprojekt.thevault.data.VaultRepository
+import com.uniprojekt.thevault.data.model.GameSession
+import com.uniprojekt.thevault.data.model.MinigameResult
 import com.uniprojekt.thevault.network.NetworkManager
 import com.uniprojekt.thevault.network.NetworkUtils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -118,6 +122,34 @@ class GameViewModel : ViewModel() {
     
     /** Öffentlicher State-Stream für die UI. */
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
+
+    // Repository für die lokale Persistenz (Initialisierung erfolgt idealerweise via DI/Hilt)
+    // AI-Generated: Highly Extensible Room Persistence Layer for Asynchronous Team Metrics
+    private var vaultRepository: VaultRepository? = null
+
+    /**
+     * Setzt das Repository für den Datenzugriff.
+     */
+    fun initRepository(repository: VaultRepository) {
+        this.vaultRepository = repository
+    }
+
+    /**
+     * AI-Generated: Highly Extensible Room Persistence Layer for Asynchronous Team Metrics
+     * Speichert die finale Spielsession dezentral auf dem Gerät.
+     *
+     * LOGIK-VORLAGE:
+     * 1. Der Host verarbeitet während der Runde die transienten Echtzeit-Sensorwerte der Clients 
+     *    (z.B. kontinuierliche Gyro-Daten für Lockpicking) im flüchtigen RAM.
+     * 2. Nach Match-Ende aggregiert der Host diese Live-Events zu einem kompakten Team-Performance-Paket.
+     * 3. Die Metriken werden in das JSON-Feld 'additionalMetrics' serialisiert.
+     * 4. Diese Funktion persistiert das Ergebnis dezentral in der lokalen Room-Datenbank.
+     */
+    fun saveFinalSession(session: GameSession, results: List<MinigameResult>) {
+        viewModelScope.launch {
+            vaultRepository?.saveFullSession(session, results)
+        }
+    }
 
     /**
      * Startet das Spiel und wechselt zum ersten Minispiel.
