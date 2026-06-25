@@ -65,3 +65,38 @@ Das Team definierte die präzisen Anforderungen an die State Machine und die gew
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Bereitstellung des Referenzfotos zur Formvorgabe. Visuelle Prüfung des Ergebnisses auf einem Testgerät und Feinjustierung der Konstanten `bendX`, `bendY` und `handleX` (Winkel/Länge des Knicks) zur besseren Annäherung an die Vorlage.
+
+### 🔹 Referenz: [REF-ISSUE10-NET-BASE]
+* **Datum:** 15.6.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/StartScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+* **Inhalt/Ziel:** Implementierung der P2P-Socket-Basis für den lokalen Multiplayer, inkl. Host/Client-Logik und Handshake.
+
+### 🔹 Referenz: [REF-ISSUE11-QR-CONNECT]
+* **Datum:** 25.6.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/build.gradle.kts`
+    * `gradle/libs.versions.toml`
+    * `app/src/main/AndroidManifest.xml`
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkUtils.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/StartScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/ScannerScreen.kt`
+* **Inhalt/Ziel:** QR-Code Onboarding für P2P-Verbindungen (Generierung & Scanning) mit manuellem IP-Fallback.
+
+#### Verwendeter Prompt:
+> Erweitere das bestehende Netzwerk-Fundament um ein komfortables QR-Code-Onboarding für Host und Client inklusive eines manuellen IP-Fallbacks.
+>
+> 1. Gradle-Abhängigkeiten: 'com.google.zxing:core', CameraX & ML Kit Barcode Scanning.
+> 2. Host-Erweiterung: IPv4-Ermittlung, QR-Code Generierung & Clipboard-Funktion.
+> 3. Client-Erweiterung: Kamera-Scanner-Screen (CameraX & ML Kit) mit manuellem Fallback-Umschalter.
+> 4. Berechtigungen: CAMERA-Permission hinzufügen.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Integration der Kamera-Vorschau in die Compose-UI via `AndroidView`. Definition des Fallback-Workflows zwischen automatischem Scan und manueller Eingabe für Emulator-Kompatibilität.

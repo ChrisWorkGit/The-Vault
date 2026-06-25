@@ -1,4 +1,6 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
+// PROMPT-REFERENZ: [REF-ISSUE10-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE11-QR-CONNECT]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.layout.PaddingValues
