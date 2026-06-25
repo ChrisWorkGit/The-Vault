@@ -1,6 +1,6 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
-// PROMPT-REFERENZ: [REF-ISSUE10-NET-BASE]
-// PROMPT-REFERENZ: [REF-ISSUE11-QR-CONNECT]
+// PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -67,10 +67,6 @@ class GameViewModel : ViewModel() {
         val ip = NetworkUtils.getLocalIpv4Address()
         _hostIp.value = ip ?: "IP nicht gefunden"
         
-    /**
-     * Startet den Hosting-Prozess im Hintergrund.
-     */
-    fun startHosting() {
         viewModelScope.launch {
             NetworkManager.startHost(
                 onStatusUpdate = { _networkStatus.value = it },
@@ -97,13 +93,6 @@ class GameViewModel : ViewModel() {
     }
 
     /**
-                    if (success) startGame() // Testweise direkt starten bei Erfolg
-                }
-            )
-        }
-    }
-
-    /**
      * Versucht einer bestehenden Session beizutreten.
      * @param ip Die IP-Adresse des Hosts.
      */
@@ -116,7 +105,6 @@ class GameViewModel : ViewModel() {
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
                     if (success) startGame()
-                    if (success) startGame() // Testweise direkt starten bei Erfolg
                 }
             )
         }
@@ -171,5 +159,7 @@ class GameViewModel : ViewModel() {
         _gameState.value = GameState.Lobby
         _isConnected.value = false
         _networkStatus.value = "Bereit für Verbindung"
+        _hostIp.value = null
+        _showScanner.value = false
     }
 }

@@ -49,7 +49,7 @@ In diesem Dokument wird die Nutzung von künstlicher Intelligenz (LLMs) im Entwi
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Das Team definierte die präzisen Anforderungen an die State Machine und die gewünschte Architektur. Nach der Generierung durch die KI wurden die Build-Konfigurationen (Gradle) manuell überprüft und korrigiert, um die Kompatibilität der Bibliotheken (insbesondere ViewModel-Compose) sicherzustellen. Zudem wurde die Integration in die `MainActivity` sowie die Bereinigung alter Package-Strukturen vorgenommen.
 
-### 🔹 Referenz: [REF-ISSUE10-NET-BASE]
+### 🔹 Referenz: [REF-ISSUE02-NET-BASE]
 * **Datum:** 15.6.2026
 * **Genutztes Tool:** Gemini (Android Studio AI Plugin)
 * **Betroffene Dateien:** 
@@ -92,7 +92,7 @@ Vorgabe des Handshake-Protokolls ("Hello Vault" / "Access Granted") und Definiti
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Bereitstellung des Referenzfotos zur Formvorgabe. Visuelle Prüfung des Ergebnisses auf einem Testgerät und Feinjustierung der Konstanten `bendX`, `bendY` und `handleX` (Winkel/Länge des Knicks) zur besseren Annäherung an die Vorlage.
 
-### 🔹 Referenz: [REF-ISSUE10-NET-BASE]
+### 🔹 Referenz: [REF-ISSUE02-NET-BASE]
 * **Datum:** 15.6.2026
 * **Genutztes Tool:** Gemini (Android Studio AI Plugin)
 * **Betroffene Dateien:** 
@@ -102,7 +102,7 @@ Bereitstellung des Referenzfotos zur Formvorgabe. Visuelle Prüfung des Ergebnis
     * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
 * **Inhalt/Ziel:** Implementierung der P2P-Socket-Basis für den lokalen Multiplayer, inkl. Host/Client-Logik und Handshake.
 
-### 🔹 Referenz: [REF-ISSUE11-QR-CONNECT]
+### 🔹 Referenz: [REF-ISSUE17-QR-CONNECT]
 * **Datum:** 25.6.2026
 * **Genutztes Tool:** Gemini (Android Studio AI Plugin)
 * **Betroffene Dateien:** 

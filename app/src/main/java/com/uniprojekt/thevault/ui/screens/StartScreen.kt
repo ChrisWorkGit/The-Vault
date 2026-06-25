@@ -1,6 +1,6 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
-// PROMPT-REFERENZ: [REF-ISSUE10-NET-BASE]
-// PROMPT-REFERENZ: [REF-ISSUE11-QR-CONNECT]
+// PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.ClipData
@@ -168,73 +168,6 @@ fun ManualIpView(
         }
         TextButton(onClick = onBack) {
             Text("Zurück")
-    onStartGame: () -> Unit // Beibehalten für Kompatibilität, wird jetzt intern getriggert
-) {
-    // AI-Generated: Local P2P Socket Foundation
-    
-    val networkStatus by viewModel.networkStatus.collectAsState()
-    val isConnected by viewModel.isConnected.collectAsState()
-    
-    // Lokaler State für die IP-Eingabe (Default localhost für Tests)
-    var ipAddress by remember { mutableStateOf("127.0.0.1") }
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "THE VAULT", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Text(text = "P2P Multiplayer Base", fontSize = 14.sp, color = MaterialTheme.colorScheme.secondary)
-        
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Anzeige des aktuellen Netzwerk-Status
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Text(
-                text = networkStatus,
-                modifier = Modifier.padding(16.dp),
-                fontSize = 14.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        if (!isConnected) {
-            // Optionen wenn noch nicht verbunden
-            Button(
-                onClick = { viewModel.startHosting() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Als Host starten (Server)")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            TextField(
-                value = ipAddress,
-                onValueChange = { ipAddress = it },
-                label = { Text("Host IP-Adresse") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { viewModel.joinGame(ipAddress) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Als Client beitreten")
-            }
-        } else {
-            // Button zum Starten, falls der automatische Start nicht gewünscht ist
-            Button(onClick = onStartGame) {
-                Text(text = "Mission beginnen")
-            }
         }
     }
 }

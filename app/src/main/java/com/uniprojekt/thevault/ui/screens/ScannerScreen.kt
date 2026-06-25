@@ -1,4 +1,4 @@
-// PROMPT-REFERENZ: [REF-ISSUE11-QR-CONNECT]
+// PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 package com.uniprojekt.thevault.ui.screens
 
 import android.Manifest
