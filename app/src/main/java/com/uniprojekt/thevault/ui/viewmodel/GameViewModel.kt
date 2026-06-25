@@ -67,6 +67,10 @@ class GameViewModel : ViewModel() {
         val ip = NetworkUtils.getLocalIpv4Address()
         _hostIp.value = ip ?: "IP nicht gefunden"
         
+    /**
+     * Startet den Hosting-Prozess im Hintergrund.
+     */
+    fun startHosting() {
         viewModelScope.launch {
             NetworkManager.startHost(
                 onStatusUpdate = { _networkStatus.value = it },
@@ -93,6 +97,13 @@ class GameViewModel : ViewModel() {
     }
 
     /**
+                    if (success) startGame() // Testweise direkt starten bei Erfolg
+                }
+            )
+        }
+    }
+
+    /**
      * Versucht einer bestehenden Session beizutreten.
      * @param ip Die IP-Adresse des Hosts.
      */
@@ -105,6 +116,7 @@ class GameViewModel : ViewModel() {
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
                     if (success) startGame()
+                    if (success) startGame() // Testweise direkt starten bei Erfolg
                 }
             )
         }

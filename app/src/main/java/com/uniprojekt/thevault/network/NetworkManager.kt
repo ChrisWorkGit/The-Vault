@@ -57,6 +57,8 @@ object NetworkManager {
                 onHandshakeDone(false)
             }
 
+            // In diesem einfachen Beispiel lassen wir den Socket offen oder schließen ihn je nach Bedarf.
+            // serverSocket.close() 
         } catch (e: Exception) {
             Log.e(TAG, "Fehler beim Hosting", e)
             onStatusUpdate("Fehler beim Hosting: ${e.message}")
