@@ -126,3 +126,55 @@ Bereitstellung des Referenzfotos zur Formvorgabe. Visuelle Prüfung des Ergebnis
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Integration der Kamera-Vorschau in die Compose-UI via `AndroidView`. Definition des Fallback-Workflows zwischen automatischem Scan und manueller Eingabe für Emulator-Kompatibilität.
+
+### 🔹 Referenz: [REF-ISSUE03-ROOM-SETUP]
+* **Datum:** 26.6.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/build.gradle.kts`
+    * `gradle/libs.versions.toml`
+    * `app/src/main/java/com/uniprojekt/thevault/data/model/GameSession.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/model/MinigameResult.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/model/GameSessionWithResults.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/dao/VaultDao.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/VaultDatabase.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/VaultRepository.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+* **Inhalt/Ziel:** Implementierung der Room-Datenbankstruktur zur lokalen Speicherung von Spiel-Statistiken mit einem hochflexiblen JSON-Metrikfeld für kooperative Minispiele.
+
+#### Verwendeter Prompt:
+> Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+> Die neue Referenz-ID für diese Aufgabe lautet: [REF-ISSUE03-ROOM-SETUP]
+> 
+> PROJEKT-KONTEXT & SPEZIFIKATION:
+> Wir haben die P2P-Netzwerkbasis und das QR-Code-Onboarding (Issue #2 & #17) erfolgreich implementiert. Nun setzen wir die lokale Persistenzschicht (Room-Datenbank) um. 
+> 
+> "The Vault" ist ein rein kooperatives, asynchrones Multiplayer-Spiel (Prinzip: 'Spaceteam' / 'Keep Talking and Nobody Explodes'). Das bedeutet:
+> 1. Minispiele sind NIEMALS isolierte Singleplayer-Aufgaben. Sie erfordern koordinierte, gleichzeitige Echtzeit-Aktionen des gesamten Teams (z.B. Spieler 1 sendet kontinuierlich Gyro-Werte, wodurch beim Partner ein akustisches Schloss-Klicken triggert).
+> 2. Jedes Minispiel produziert völlig andere Datenstrukturen (Winkel, Dezibel-Peaks, Synchronisations-Deltas in ms, Fehlversuche).
+> 3. Der Host fungiert als Authoritative Server im RAM: Er gleicht die Live-Events ab. Erst nach Rundenende (Sieg/Niederlage) broadcastet er ein zusammenfassendes Statistik-Paket an alle Clients. Jedes Gerät speichert diese Runden-Zusammenfassung dann dezentral in seiner eigenen Room-Datenbank für die lokale Historie ab.
+> 
+> AUFGABE:
+> Implementiere die Room-Datenbankstruktur. Da die kooperativen Minispiele hochgradig unterschiedliche Metriken aufweisen, nutzen wir ein generisches Ansatzmodell über ein JSON/Text-Metrikfeld, um zukünftige Schema-Migrationen zu verhindern.
+> 
+> Bitte erstelle folgende Komponenten:
+> 
+> 1. Gradle-Konfiguration:
+>    - Zeige mir kurz die benötigten Room-Abhängigkeiten (Runtime, KSP und Room-Ktx für Coroutines) für die build.gradle.kts.
+> 
+> 2. Die Entitäten (Entities):
+>    - GameSession.kt: Speichert die globalen Heist-Metadaten (sessionId [PK, Auto-Increment], timestamp [Long], isWin [Boolean], totalDurationSeconds [Int]).
+>    - MinigameResult.kt: Speichert die aggregierten Team-Ergebnisse pro gespieltem Minigame (resultId [PK, Auto-Increment], sessionId [FK zu GameSession mit CASCADE Delete], minigameTag [String, z.B. "COOP_LOCKPICK"], isSuccess [Boolean], timeSpentSeconds [Int]).
+>    - additionalMetrics (String) in MinigameResult: Ein essenzielles TEXT/JSON-Feld. Hier legt jedes Koop-Minispiel am Ende seine maßgeschneiderten Team-Performance-Werte ab (z.B. {"desync_time_ms": 3400, "audio_clues_heard": 8} oder {"peak_noise_db": 65}).
+> 
+> 3. Data Access Object (VaultDao.kt) & Repository:
+>    - Richte die @Insert-Methoden für eine GameSession sowie eine Liste von MinigameResult ein.
+>    - Erstelle eine Query mit @Transaction, die eine vollständige Spielrunde inklusive aller dazugehörigen Minigame-Ergebnisse über eine relationale Hilfsklasse GameSessionWithResults abfragt.
+>    - Kapsle die DAO-Aufrufe sauber in einem VaultRepository.kt.
+> 
+> 4. ViewModel-Integration (Vorbereitung für den Netzwerk-Loop):
+>    - Implementiere im GameViewModel die Funktion saveFinalSession(session: GameSession, results: List<MinigameResult>) über das Repository.
+>    - Füge ausführliche deutsche KDocs/Kommentare ein, die als logische Vorlage dienen: Erläutere im Code, wie der Host die transienten Echtzeit-Sensorwerte der Clients im RAM verarbeitet und nach dem Match zu einem kompakten String für das Feld additionalMetrics zusammenfasst, bevor die Speicherung getriggert wird.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Vorgabe des Datenmodells (Session vs. Result) und des dezentralen Speicheransatzes. Festlegung des `additionalMetrics`-Feldes als JSON-String zur Vermeidung von Schema-Migrationen bei neuen kooperativen Minispielen. Zudem wurde eine Fehleranalyse bei der KSP-Kompilierung ("unexpected jvm signature V") durchgeführt und durch ein Upgrade auf Room 2.8.4 sowie die Anpassung der KSP-Version auf 2.2.10-2.0.2 erfolgreich behoben. Ergänzend wurden Manifest-Einträge für Hardware-Features hinzugefügt, um Lint-Fehler beim Kamera-Onboarding zu beseitigen.
