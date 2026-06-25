@@ -1,4 +1,5 @@
-// PROMPT-REFERENZ: [REF-ISSUE10-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 package com.uniprojekt.thevault.network
 
 import android.util.Log
@@ -16,6 +17,7 @@ import java.net.Socket
  */
 object NetworkManager {
     // AI-Generated: Local P2P Socket Foundation
+    // AI-Generated: QR-Code P2P Onboarding Layer with Manual Fallback
 
     private const val TAG = "NetworkManager"
     private const val PORT = 8888

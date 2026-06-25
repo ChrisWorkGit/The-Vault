@@ -1,10 +1,12 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
-// PROMPT-REFERENZ: [REF-ISSUE10-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
+// PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uniprojekt.thevault.network.NetworkManager
+import com.uniprojekt.thevault.network.NetworkUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +42,7 @@ class GameViewModel : ViewModel() {
     }
 
     // AI-Generated: Local P2P Socket Foundation
+    // AI-Generated: QR-Code P2P Onboarding Layer with Manual Fallback
 
     private val _networkStatus = MutableStateFlow("Bereit für Verbindung")
     /** Aktueller Status der Netzwerkverbindung als Text. */
@@ -49,19 +52,44 @@ class GameViewModel : ViewModel() {
     /** Gibt an, ob der Handshake erfolgreich abgeschlossen wurde. */
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
+    private val _hostIp = MutableStateFlow<String?>(null)
+    /** Die eigene IP-Adresse im WLAN (nur für Hosts). */
+    val hostIp: StateFlow<String?> = _hostIp.asStateFlow()
+
+    private val _showScanner = MutableStateFlow(false)
+    /** Steuert, ob der QR-Scanner für Clients angezeigt wird. */
+    val showScanner: StateFlow<Boolean> = _showScanner.asStateFlow()
+
     /**
-     * Startet den Hosting-Prozess im Hintergrund.
+     * Startet den Hosting-Prozess und ermittelt die lokale IP für den QR-Code.
      */
     fun startHosting() {
+        val ip = NetworkUtils.getLocalIpv4Address()
+        _hostIp.value = ip ?: "IP nicht gefunden"
+        
         viewModelScope.launch {
             NetworkManager.startHost(
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
-                    if (success) startGame() // Testweise direkt starten bei Erfolg
+                    if (success) startGame()
                 }
             )
         }
+    }
+
+    /**
+     * Öffnet den QR-Scanner.
+     */
+    fun openScanner() {
+        _showScanner.value = true
+    }
+
+    /**
+     * Schließt den Scanner.
+     */
+    fun closeScanner() {
+        _showScanner.value = false
     }
 
     /**
@@ -69,13 +97,14 @@ class GameViewModel : ViewModel() {
      * @param ip Die IP-Adresse des Hosts.
      */
     fun joinGame(ip: String) {
+        _showScanner.value = false
         viewModelScope.launch {
             NetworkManager.connectToHost(
                 hostIp = ip,
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
-                    if (success) startGame() // Testweise direkt starten bei Erfolg
+                    if (success) startGame()
                 }
             )
         }
@@ -128,5 +157,9 @@ class GameViewModel : ViewModel() {
      */
     fun resetToLobby() {
         _gameState.value = GameState.Lobby
+        _isConnected.value = false
+        _networkStatus.value = "Bereit für Verbindung"
+        _hostIp.value = null
+        _showScanner.value = false
     }
 }
