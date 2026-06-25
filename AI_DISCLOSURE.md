@@ -75,3 +75,19 @@ Das Team definierte die präzisen Anforderungen an die State Machine und die gew
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Vorgabe des Handshake-Protokolls ("Hello Vault" / "Access Granted") und Definition des Port 8888. Das Team hat die UI-Anforderungen für den StartScreen spezifiziert (IP-Eingabefeld).
 
+### 🔹 Referenz: [REF-ISSUE13-LOCKPICK-DIETRICH-SHAPE]
+* **Datum:** 23.6.2026
+* **Genutztes Tool:** Claude (Claude.ai, Sonnet 4.6)
+* **Betroffene Dateien:**
+  * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/LockpickScreen.kt`
+* **Inhalt/Ziel:** Anpassung der Zeichnung des Dietrich-Hakens im Lockpicking-Minispiel: statt einer geraden/gebogenen Linie mit Pfeilspitze wird nun die charakteristische L-Form eines echten Dietrichs (langer Griff + kurze abgewinkelte Spitze) nachgebildet.
+
+#### Verwendeter Prompt:
+> Ändere den gezeichneten Dietrich von dem geraden Strich in die Form des bereitgestellten Bildes.
+>
+> *(Anhang: Referenzfoto eines echten Dietrich-/Spannhakens, `LockPick.png`)*
+> 
+> *(Anhang: Dokumentations Richtlinien für KI Nutzung, `AI_RULES.txt`)*
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Bereitstellung des Referenzfotos zur Formvorgabe. Visuelle Prüfung des Ergebnisses auf einem Testgerät und Feinjustierung der Konstanten `bendX`, `bendY` und `handleX` (Winkel/Länge des Knicks) zur besseren Annäherung an die Vorlage.

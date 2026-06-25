@@ -10,6 +10,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
+import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
 import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 
 // AI-Generated: Core Architecture & State Machine Strategy
@@ -34,11 +36,24 @@ fun MainApp(
                 )
             }
             is GameViewModel.GameState.Playing -> {
-                GameScreen(
-                    minigameName = state.name,
-                    onComplete = { viewModel.completeCurrentMinigame() },
-                    onFail = { viewModel.triggerGameOver(isWin = false) }
-                )
+                // ShakeDecrypt, andere Platzhalter werden nich immer angezeigt
+                if (state.name == "ShakeDecrypt") {
+                    ShakeDecryptScreen(
+                        onComplete = { viewModel.completeCurrentMinigame() },
+                        onFail = { viewModel.triggerGameOver(isWin = false) }
+                    )
+                } else if (state.name == "LockPick") {
+                    LockpickScreen(
+                        onComplete = { viewModel.completeCurrentMinigame() },
+                        onFail = { viewModel.triggerGameOver(isWin = false) }
+                    )
+                } else {
+                    GameScreen(
+                        minigameName = state.name,
+                        onComplete = { viewModel.completeCurrentMinigame() },
+                        onFail = { viewModel.triggerGameOver(isWin = false) }
+                    )
+                }
             }
             is GameViewModel.GameState.GameOver -> {
                 GameOverScreen(
