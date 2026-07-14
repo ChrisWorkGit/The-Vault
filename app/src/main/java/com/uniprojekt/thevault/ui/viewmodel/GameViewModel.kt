@@ -3,6 +3,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
 // PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
+// PROMPT-REFERENZ: [REF-ISSUE05-DECIBEL-BYPASS]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -57,6 +58,9 @@ class GameViewModel : ViewModel() {
             message == "GAME_OVER:DISCONNECTED_BY_USER" -> {
                 triggerGameOver(isWin = false, reason = "VERBINDUNG VOM PARTNER ABGEBROCHEN")
             }
+            message == "GAME_OVER:FAILED" -> {
+                triggerGameOver(isWin = false, reason = "MISSION GESCHEITERT: PARTNER HAT ALARM AUSGELÖST")
+            }
             message == "CONNECTION_LOST" -> {
                 if (_gameState.value is GameState.Playing) {
                     triggerGameOver(isWin = false, reason = "VERBINDUNG VERLOREN")
@@ -76,8 +80,10 @@ class GameViewModel : ViewModel() {
 
     /**
      * Debug-Funktion: Triggert sofort ein Fehlschlagen des aktuellen Minispiels.
+     * Informiert auch den Partner über das Scheitern.
      */
     fun failCurrentMinigame() {
+        NetworkManager.sendMessage("GAME_OVER:FAILED")
         triggerGameOver(isWin = false)
     }
 
@@ -152,8 +158,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    // Liste der Dummy-Minispiele für den Prototyp
-    private val minigames = listOf("ShakeDecrypt", "LockPick", "Gyro-Lock", "Laser Barrier", "Voice Scanner", "Final Swipe")
+    // Liste der Minispiele für das Projekt
+    private val minigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick", "Gyro-Lock", "Laser Barrier", "Voice Scanner", "Final Swipe")
 
     // Interner State der State Machine
     private val _gameState = MutableStateFlow<GameState>(GameState.Lobby)

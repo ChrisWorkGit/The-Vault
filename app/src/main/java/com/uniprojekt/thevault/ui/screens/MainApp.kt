@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.uniprojekt.thevault.ui.screens.minigames.DecibelBypassScreen
 import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
 import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
 import com.uniprojekt.thevault.ui.theme.NeonGreen
@@ -46,23 +47,29 @@ fun MainApp(
                 Box(modifier = Modifier.fillMaxSize()) {
                     // Minispiel-Inhalt
                     when (state.name) {
+                        "DecibelBypass" -> {
+                            DecibelBypassScreen(
+                                onComplete = { viewModel.completeCurrentMinigame() },
+                                onFail = { viewModel.failCurrentMinigame() }
+                            )
+                        }
                         "ShakeDecrypt" -> {
                             ShakeDecryptScreen(
                                 onComplete = { viewModel.completeCurrentMinigame() },
-                                onFail = { viewModel.triggerGameOver(isWin = false) }
+                                onFail = { viewModel.failCurrentMinigame() }
                             )
                         }
                         "LockPick" -> {
                             LockpickScreen(
                                 onComplete = { viewModel.completeCurrentMinigame() },
-                                onFail = { viewModel.triggerGameOver(isWin = false) }
+                                onFail = { viewModel.failCurrentMinigame() }
                             )
                         }
                         else -> {
                             GameScreen(
                                 minigameName = state.name,
                                 onComplete = { viewModel.completeCurrentMinigame() },
-                                onFail = { viewModel.triggerGameOver(isWin = false) }
+                                onFail = { viewModel.failCurrentMinigame() }
                             )
                         }
                     }

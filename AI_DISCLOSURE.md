@@ -238,3 +238,36 @@ Bereitstellung der Design-Referenz (Figma-Mockup `image_3f2bea.jpg`) und Definit
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Vorgabe der spezifischen Abbruch-Nachricht für das P2P-Protokoll und Definition der Debug-Interventionen zur Test-Beschleunigung. Das Team konfigurierte die Gradle-BuildFeatures manuell für den Zugriff auf `BuildConfig` und integrierte das Menü global in die `MainApp`-Struktur, um alle Minispiele abzudecken. Fehlerhafte Icon-Importe und veraltete Material3-Divider-Referenzen wurden manuell korrigiert.
 
+### 🔹 Referenz: [REF-ISSUE05-DECIBEL-BYPASS]
+* **Datum:** 15.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/src/main/AndroidManifest.xml`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/DecibelBypassScreen.kt`
+* **Inhalt/Ziel:** Implementierung des kooperativen "Decibel Bypass"-Minispiels mit Mikrofon-Synchronisation, prozeduraler Wellengenerierung und intelligentem Game-Balancing.
+
+#### Verwendeter Prompt (Phase 1: Core Implementation):
+> Erstelle das kooperative Minispiel "Decibel Bypass" (Issue #5). Es nutzt das Mikrofon zur Synchronisation.
+> 1. Vorbereitung: Prüfe STREAM_MUSIC Lautstärke. Zeige Warnung wenn nicht auf 100%. Button zum Maximieren via AudioManager.
+> 2. Gameplay: Sinusförmige Audiokurve auf Canvas. Spieler muss entgegen der Wellenrichtung (Wischgeste) gegensteuern.
+> 3. Koop-Mikrofon-Logik: Bei Fehlern wird ein Alarm-Sound abgespielt. Das Mikrofon des Partners muss diesen Ton erkennen (Amplituden-Peak > 25000) und ebenfalls einen Fehler werten.
+> 4. Fehler-Limit: 3 Versuche ([X] [X] [X]).
+
+#### Verwendeter Prompt (Phase 2: Visual Enhancements):
+> Optimiere die grafische Darstellung im DecibelBypassScreen.kt:
+> 1. Prozedurale Welle: Nutze Superposition aus zwei Sinus-Frequenzen für organisches Signalrauschen. Implementiere zufällige Amplituden-Spikes.
+> 2. Antiphase-Visualisierung: Zeichne eine zweite, rote Welle (Feedback), deren Amplitude durch den Finger gesteuert wird.
+> 3. Glow-Effekt: Füge der Spieler-Welle einen neon-roten Glow hinzu und zeichne eine gestrichelte Baseline zur Orientierung.
+
+#### Verwendeter Prompt (Phase 3: Balancing & UX):
+> Das Spiel ist zu schwer. Optimiere die Balance:
+> 1. Toleranz-Fenster: Erlaube ca. 20% Abweichung auf der Y-Achse beim Neutralisieren der Welle.
+> 2. Visuelles Feedback: Färbe die Spieler-Welle grün und lass sie pulsieren, wenn sie sich im Toleranzbereich ("Safe") befindet. Nur bei Fehlern wird sie rot.
+> 3. Grace Period: Implementiere eine Gnadenfrist/Cooldown von 1,5s nach einem Fehler, um Kaskaden-Fehler zu vermeiden.
+> 4. Smoothing: Nutze einen Low-Pass-Filter auf den Touch-Input, um Jitter zu vermeiden.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Integration der `RECORD_AUDIO` Berechtigungen im Manifest. Das Team definierte den Amplituden-Schwellenwert (`25000`) basierend auf Hardware-Tests und implementierte eine 30-sekündige Überlebens-Siegbedingung für den kooperativen Loop. Zudem wurden Kompilierfehler in der `infiniteRepeatable`-Animation behoben und die mathematische Gewichtung des Low-Pass-Filters (`0.7/0.3`) für optimale Haptik feinjustiert. Ergänzend wurde das visuelle Feedback der Fehler-Matrix verfeinert (runder Glow statt vollflächigem Quadrat) und die globale "Shared Failure"-Logik über das Netzwerk implementiert, um sicherzustellen, dass ein Scheitern eines Spielers das Spiel für das gesamte Team beendet.
+
