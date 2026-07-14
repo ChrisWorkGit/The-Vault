@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
+// PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.background
@@ -23,7 +24,8 @@ import com.uniprojekt.thevault.ui.theme.*
  * Das modale In-Game-Menü im Cyberpunk-Stil.
  * @param onDismiss Schließt das Menü.
  * @param onAbort Bricht das gesamte Spiel ab.
- * @param onDebugComplete Debug: Beendet das aktuelle Minispiel erfolgreich.
+ * @param onDebugComplete Debug: Beendet das aktuelle Minispiel nur lokal.
+ * @param onDebugCompleteTeam Debug: Beendet das aktuelle Minispiel für alle Agenten.
  * @param onDebugFail Debug: Lässt das aktuelle Minispiel fehlschlagen.
  */
 @Composable
@@ -31,6 +33,7 @@ fun InGameMenu(
     onDismiss: () -> Unit,
     onAbort: () -> Unit,
     onDebugComplete: () -> Unit,
+    onDebugCompleteTeam: () -> Unit,
     onDebugFail: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -66,7 +69,7 @@ fun InGameMenu(
                     shape = CyberpunkShape(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.2f))
                 ) {
-                    Text(text = "SPIEL ABBRECHEN", color = Color.Red, fontFamily = FontFamily.Monospace)
+                    Text(text = "MISSION ABBRECHEN", color = Color.Red, fontFamily = FontFamily.Monospace)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -77,7 +80,7 @@ fun InGameMenu(
                     shape = CyberpunkShape(),
                     colors = ButtonDefaults.buttonColors(containerColor = DarkGreen)
                 ) {
-                    Text(text = "ZURÜCK ZUM SPIEL", color = NeonGreen, fontFamily = FontFamily.Monospace)
+                    Text(text = "ZURÜCK ZUM SYSTEM", color = NeonGreen, fontFamily = FontFamily.Monospace)
                 }
 
                 // Debug-Sektion: Nur in Debug-Builds sichtbar
@@ -99,14 +102,28 @@ fun InGameMenu(
                     ) {
                         Button(
                             onClick = {
-                                onDebugComplete()
+                                onDebugCompleteTeam()
                                 onDismiss()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = CyberpunkShape(),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF442200))
                         ) {
-                            Text(text = "MINISPIEL ERFOLGREICH BEENDEN", color = Color(0xFFFFA500), fontSize = 10.sp)
+                            Text(text = "TEAM: MISSION ERFOLGREICH", color = Color(0xFFFFA500), fontSize = 10.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                onDebugComplete()
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = CyberpunkShape(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF221100))
+                        ) {
+                            Text(text = "LOCAL: NODE BYPASS", color = Color(0xFFFFA500), fontSize = 10.sp)
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -120,7 +137,7 @@ fun InGameMenu(
                             shape = CyberpunkShape(),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF442200))
                         ) {
-                            Text(text = "MINISPIEL FEHLGESCHLAGEN", color = Color(0xFFFFA500), fontSize = 10.sp)
+                            Text(text = "DEBUG: SIMULATE ALARM", color = Color(0xFFFFA500), fontSize = 10.sp)
                         }
                     }
                 }
