@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
+// PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -12,12 +13,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 // AI-Generated: Core Architecture & State Machine Strategy
+// AI-Generated: Cyberpunk In-Game Menu & Conditional Debug Overlay
 
 /**
  * Bildschirm für das Spielende (Sieg oder Niederlage).
+ * @param isWin Gibt an, ob das Spiel gewonnen wurde.
+ * @param reason Ein optionaler Text, der den Grund für das Spielende erklärt.
+ * @param onRestart Callback zum Zurückkehren in die Lobby.
  */
 @Composable
-fun GameOverScreen(isWin: Boolean, onRestart: () -> Unit) {
+fun GameOverScreen(isWin: Boolean, reason: String? = null, onRestart: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -29,9 +34,17 @@ fun GameOverScreen(isWin: Boolean, onRestart: () -> Unit) {
             color = if (isWin) Color.Green else Color.Red,
             fontWeight = FontWeight.Bold
         )
-        Text(text = if (isWin) "Der Tresor ist offen!" else "Du wurdest verhaftet.")
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Zeige den spezifischen Grund an, falls vorhanden, sonst Standardtext
+        Text(
+            text = reason ?: (if (isWin) "Der Tresor ist offen!" else "Du wurdest verhaftet."),
+            color = if (isWin) Color.Green.copy(alpha = 0.7f) else Color.Red.copy(alpha = 0.7f),
+            fontSize = 18.sp
+        )
+        
+        Spacer(modifier = Modifier.height(48.dp))
         
         Button(onClick = onRestart) {
             Text(text = "Zurück zur Lobby")
