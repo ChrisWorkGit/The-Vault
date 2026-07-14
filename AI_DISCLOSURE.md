@@ -206,3 +206,35 @@ Vorgabe des Datenmodells (Session vs. Result) und des dezentralen Speicheransatz
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Bereitstellung der Design-Referenz (Figma-Mockup `image_3f2bea.jpg`) und Definition des genauen Farbschemas. Das Team erstellte die `DESIGN_GUIDELINES.md` als verbindliche Vorgabe für die KI. Die KI wurde instruiert, diese Richtlinien strikt einzuhalten und bei gestalterischen Unklarheiten, die nicht in der Dokumentation abgedeckt sind, explizit Rücksprache mit dem Team zu halten. Zudem validierte das Team die Performance der Animationen und die Scannbarkeit des neongrünen QR-Codes auf schwarzem Hintergrund. Es wurden Kompilierfehler durch das Hinzufügen fehlender Material-Icons-Abhängigkeiten sowie die Aktualisierung veralteter Icon-Referenzen behoben.
 
+### 🔹 Referenz: [REF-ISSUE23-INGAME-MENU]
+* **Datum:** 14.7.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/build.gradle.kts`
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/GameScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/GameOverScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/InGameMenu.kt`
+* **Inhalt/Ziel:** Implementierung des In-Game-Menüs mit Cyberpunk-Styling und eines versteckten Debug-Overlays für Entwickler-Builds, inklusive P2P-Abbruch-Signalisierung.
+
+#### Verwendeter Prompt:
+> Erstelle ein ansprechendes, im Cyberpunk-Stil gehaltenes In-Game-Menü (z. B. über ein modales BottomSheet oder ein Overlay-Dialog) während der aktiven Spielphase (Playing).
+> 
+> 1. Reguläres In-Game-Menü (Für alle Builds verfügbar):
+>    - Erreichbar über ein dezentes Zahnrad-Icon oben rechts.
+>    - Button "SPIEL ABBRECHEN": Sendet via NetworkManager "GAME_OVER:DISCONNECTED_BY_USER" an den Partner.
+>    - Implementiere die Empfänger-Logik: Partner wechselt in den GameOver-State mit Hinweis "VERBINDUNG VOM PARTNER ABGEBROCHEN".
+> 
+> 2. Debug-Optionen (Nur in DEBUG-Builds sichtbar!):
+>    - Nutze BuildConfig.DEBUG zur Kapselung.
+>    - Sektion "DEBUG INTERVENTIONS" mit rot-oranger Warn-Border.
+>    - Buttons "MINISPIEL ERFOLGREICH BEENDEN" und "MINISPIEL FEHLGESCHLAGEN".
+> 
+> 3. UI-Styling (Cyberpunk-Konform):
+>    - Nutzung der CyberpunkShape, Monospace-Optik und Farbcodes (#00FF66, #003311).
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Vorgabe der spezifischen Abbruch-Nachricht für das P2P-Protokoll und Definition der Debug-Interventionen zur Test-Beschleunigung. Das Team konfigurierte die Gradle-BuildFeatures manuell für den Zugriff auf `BuildConfig` und integrierte das Menü global in die `MainApp`-Struktur, um alle Minispiele abzudecken. Fehlerhafte Icon-Importe und veraltete Material3-Divider-Referenzen wurden manuell korrigiert.
+

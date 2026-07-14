@@ -2,6 +2,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
+// PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -41,8 +42,43 @@ class GameViewModel : ViewModel() {
         /** 
          * Das Spiel ist beendet.
          * @param isWin True, wenn der Tresor erfolgreich geknackt wurde.
+         * @param reason Optionaler Grund für das Spielende (z.B. Abbruch durch Partner).
          */
-        data class GameOver(val isWin: Boolean) : GameState
+        data class GameOver(val isWin: Boolean, val reason: String? = null) : GameState
+    }
+
+    // AI-Generated: Cyberpunk In-Game Menu & Conditional Debug Overlay
+    
+    /**
+     * Verarbeitet eingehende Netzwerk-Nachrichten.
+     */
+    private fun handleNetworkMessage(message: String) {
+        when {
+            message == "GAME_OVER:DISCONNECTED_BY_USER" -> {
+                triggerGameOver(isWin = false, reason = "VERBINDUNG VOM PARTNER ABGEBROCHEN")
+            }
+            message == "CONNECTION_LOST" -> {
+                if (_gameState.value is GameState.Playing) {
+                    triggerGameOver(isWin = false, reason = "VERBINDUNG VERLOREN")
+                }
+            }
+        }
+    }
+
+    /**
+     * Bricht das Spiel manuell ab und informiert den Partner.
+     */
+    fun abortGame() {
+        NetworkManager.sendMessage("GAME_OVER:DISCONNECTED_BY_USER")
+        resetToLobby()
+        NetworkManager.closeConnection()
+    }
+
+    /**
+     * Debug-Funktion: Triggert sofort ein Fehlschlagen des aktuellen Minispiels.
+     */
+    fun failCurrentMinigame() {
+        triggerGameOver(isWin = false)
     }
 
     // AI-Generated: Local P2P Socket Foundation
@@ -77,7 +113,8 @@ class GameViewModel : ViewModel() {
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
                     if (success) startGame()
-                }
+                },
+                onMessageReceived = { handleNetworkMessage(it) }
             )
         }
     }
@@ -109,7 +146,8 @@ class GameViewModel : ViewModel() {
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
                     if (success) startGame()
-                }
+                },
+                onMessageReceived = { handleNetworkMessage(it) }
             )
         }
     }
@@ -179,9 +217,10 @@ class GameViewModel : ViewModel() {
     /**
      * Triggert das Spielende (Sieg oder Niederlage).
      * @param isWin Gibt an, ob das Spiel gewonnen wurde.
+     * @param reason Optionaler Grund für das Spielende.
      */
-    fun triggerGameOver(isWin: Boolean) {
-        _gameState.value = GameState.GameOver(isWin)
+    fun triggerGameOver(isWin: Boolean, reason: String? = null) {
+        _gameState.value = GameState.GameOver(isWin, reason)
     }
 
     /**
@@ -193,5 +232,6 @@ class GameViewModel : ViewModel() {
         _networkStatus.value = "Bereit für Verbindung"
         _hostIp.value = null
         _showScanner.value = false
+        NetworkManager.closeConnection()
     }
 }
