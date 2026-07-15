@@ -2,6 +2,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
+// PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.layout.*
@@ -21,6 +22,7 @@ import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 
 // AI-Generated: Core Architecture & State Machine Strategy
 // AI-Generated: Cyberpunk In-Game Menu & Conditional Debug Overlay
+// AI-Generated: Multiplayer Lobby & Synchronized In-Game Menu
 
 /**
  * Die zentrale App-Komponente, die den GameState ausliest und zwischen den Screens navigiert.
@@ -30,15 +32,25 @@ fun MainApp(
     viewModel: GameViewModel = viewModel(),
     paddingValues: PaddingValues = PaddingValues()
 ) {
-    // Beobachte den aktuellen Zustand der State Machine
     val gameState by viewModel.gameState.collectAsState()
+    val playerName by viewModel.playerName.collectAsState()
+    val hostIp by viewModel.hostIp.collectAsState()
 
     Surface(modifier = Modifier.padding(paddingValues)) {
-        // Navigation basierend auf dem aktuellen Zustand (State Machine Pattern)
         when (val state = gameState) {
-            is GameViewModel.GameState.Lobby -> {
+            is GameViewModel.GameState.StartScreen -> {
                 StartScreen(
-                    onStartGame = { viewModel.startGame() }
+                    onStartGame = { viewModel.startHosting() }
+                )
+            }
+            is GameViewModel.GameState.InLobby -> {
+                LobbyScreen(
+                    players = state.players,
+                    isHost = state.isHost,
+                    currentPlayerName = playerName,
+                    hostIp = hostIp,
+                    onNameChange = { viewModel.updatePlayerName(it) },
+                    onInitiate = { viewModel.initiateHeist() }
                 )
             }
             is GameViewModel.GameState.Playing -> {
@@ -93,6 +105,7 @@ fun MainApp(
                             onDismiss = { showMenu = false },
                             onAbort = { viewModel.abortGame() },
                             onDebugComplete = { viewModel.completeCurrentMinigame() },
+                            onDebugCompleteTeam = { viewModel.debugCompleteForTeam() },
                             onDebugFail = { viewModel.failCurrentMinigame() }
                         )
                     }
@@ -105,6 +118,7 @@ fun MainApp(
                     onRestart = { viewModel.resetToLobby() }
                 )
             }
+            else -> {}
         }
     }
 }

@@ -239,7 +239,7 @@ Bereitstellung der Design-Referenz (Figma-Mockup `image_3f2bea.jpg`) und Definit
 Vorgabe der spezifischen Abbruch-Nachricht für das P2P-Protokoll und Definition der Debug-Interventionen zur Test-Beschleunigung. Das Team konfigurierte die Gradle-BuildFeatures manuell für den Zugriff auf `BuildConfig` und integrierte das Menü global in die `MainApp`-Struktur, um alle Minispiele abzudecken. Fehlerhafte Icon-Importe und veraltete Material3-Divider-Referenzen wurden manuell korrigiert.
 
 ### 🔹 Referenz: [REF-ISSUE05-DECIBEL-BYPASS]
-* **Datum:** 15.07.2026
+* **Datum:** 14.07.2026
 * **Genutztes Tool:** Gemini (Android Studio AI Plugin)
 * **Betroffene Dateien:** 
     * `app/src/main/AndroidManifest.xml`
@@ -270,4 +270,24 @@ Vorgabe der spezifischen Abbruch-Nachricht für das P2P-Protokoll und Definition
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Integration der `RECORD_AUDIO` Berechtigungen im Manifest. Das Team definierte den Amplituden-Schwellenwert (`25000`) basierend auf Hardware-Tests und implementierte eine 30-sekündige Überlebens-Siegbedingung für den kooperativen Loop. Zudem wurden Kompilierfehler in der `infiniteRepeatable`-Animation behoben und die mathematische Gewichtung des Low-Pass-Filters (`0.7/0.3`) für optimale Haptik feinjustiert. Ergänzend wurde das visuelle Feedback der Fehler-Matrix verfeinert (runder Glow statt vollflächigem Quadrat) und die globale "Shared Failure"-Logik über das Netzwerk implementiert, um sicherzustellen, dass ein Scheitern eines Spielers das Spiel für das gesamte Team beendet.
+
+### 🔹 Referenz: [REF-ISSUE23-LOBBY-SYSTEM]
+* **Datum:** 14.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:** 
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/LobbyScreen.kt`
+* **Inhalt/Ziel:** Implementierung eines dynamischen Multiplayer-Lobby-Systems für 2-4 Spieler mit Echtzeit-Namenssynchronisation und Host-Steuerung.
+
+#### Verwendeter Prompt:
+> Implementiere ein Multiplayer-Lobby-System für 2-4 Spieler.
+> 1. NetworkManager: Erweitere auf Host-Multi-Client (bis zu 3 Clients). Implementiere Broadcast-Funktion für den Host.
+> 2. GameViewModel: Neuer Zustand InLobby. Verwalte dynamische Spielerliste und synchronisiere diese bei jedem Beitritt oder Namensänderung.
+> 3. LobbyScreen: Grid mit 4 Slots. Belegte Slots zeigen Namen und Status [CONNECTED]/[YOU]. Nur Host kann Spiel starten (INITIATE HEIST) wenn mind. 2 Spieler da sind. QR-Code in der Lobby vergrößern.
+> 4. Flow: Lobby erst anzeigen wenn der erste Spieler verbunden ist (für Host).
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Vorgabe des synchronisierten P2P-Protokolls für die Spielerliste. Das Team passte den Workflow so an, dass der Host erst bei Verbindung des ersten Clients vom StartScreen in die Lobby wechselt, um eine bessere UX zu gewährleisten. Zudem wurde die Mindestanzahl von 2 Agenten für den Spielstart sowie die Skalierung des QR-Codes (size 300) und der Slots für optimale Lesbarkeit manuell optimiert.
 

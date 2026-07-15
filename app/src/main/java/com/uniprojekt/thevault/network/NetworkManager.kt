@@ -1,6 +1,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
+// PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 package com.uniprojekt.thevault.network
 
 import android.util.Log
@@ -14,28 +15,34 @@ import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.Collections
 
 /**
  * Der NetworkManager kümmert sich um die P2P-Verbindung via Sockets.
- * Er erlaubt es einem Gerät als Host (Server) zu agieren und anderen als Client beizutreten.
+ * Unterstützt nun Multi-Client Hosting (bis zu 3 Clients + 1 Host).
  */
 object NetworkManager {
     // AI-Generated: Local P2P Socket Foundation
     // AI-Generated: QR-Code P2P Onboarding Layer with Manual Fallback
     // AI-Generated: Cyberpunk In-Game Menu & Conditional Debug Overlay
+    // AI-Generated: Multiplayer Lobby & Synchronized In-Game Menu
 
     private const val TAG = "NetworkManager"
     private const val PORT = 8888
 
-    private var socket: Socket? = null
-    private var writer: PrintWriter? = null
-    private var listenJob: Job? = null
+    // Host-spezifisch: Liste aller verbundenen Client-Sockets und deren Writer
+    private val clientSockets = Collections.synchronizedList(mutableListOf<Socket>())
+    private val clientWriters = Collections.synchronizedList(mutableListOf<PrintWriter>())
+    
+    // Client-spezifisch: Verbindung zum Host
+    private var clientSocket: Socket? = null
+    private var clientWriter: PrintWriter? = null
+    
+    private val listenJobs = Collections.synchronizedList(mutableListOf<Job>())
+    private var isHost = false
 
     /**
-     * Startet den Host-Server und wartet auf eine Verbindung.
-     * @param onStatusUpdate Callback für Statusänderungen.
-     * @param onHandshakeDone Callback, wenn der Handshake erfolgreich war.
-     * @param onMessageReceived Callback für eingehende Nachrichten nach dem Handshake.
+     * Startet den Host-Server und wartet in einer Schleife auf bis zu 3 Clients.
      */
     suspend fun startHost(
         onStatusUpdate: (String) -> Unit,
@@ -43,48 +50,46 @@ object NetworkManager {
         onMessageReceived: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
-            onStatusUpdate("Host gestartet. Warte auf Client...")
+            isHost = true
+            onStatusUpdate("Server-Knoten initiiert. Warte auf Agenten...")
             val serverSocket = ServerSocket(PORT)
             
-            // Blockiert im IO-Thread, bis ein Client sich verbindet
-            val clientSocket = serverSocket.accept()
-            socket = clientSocket
-            onStatusUpdate("Client verbunden: ${clientSocket.inetAddress}")
-
-            val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
-            writer = PrintWriter(clientSocket.getOutputStream(), true)
-
-            // Handshake: Erwarte Nachricht vom Client
-            val message = reader.readLine()
-            Log.d(TAG, "Server empfing: $message")
-
-            if (message == "Hello Vault") {
-                // Bestätigung senden
-                writer?.println("Access Granted")
-                onStatusUpdate("Handshake erfolgreich: Access Granted")
-                onHandshakeDone(true)
+            // Loop, um mehrere Clients zu akzeptieren
+            while (clientSockets.size < 3) {
+                val socket = serverSocket.accept()
+                clientSockets.add(socket)
                 
-                // Starte Listening-Loop für In-Game-Kommunikation
-                startListening(reader, onMessageReceived)
-            } else {
-                writer?.println("Access Denied")
-                onStatusUpdate("Handshake fehlgeschlagen: Falsche Nachricht")
-                onHandshakeDone(false)
-                closeConnection()
+                val writer = PrintWriter(socket.getOutputStream(), true)
+                clientWriters.add(writer)
+                
+                onStatusUpdate("Agent verbunden: ${socket.inetAddress}")
+                
+                val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                
+                // Handshake: Warte auf Nachricht vom Client
+                val message = reader.readLine()
+                if (message == "Hello Vault") {
+                    writer.println("Access Granted") // Bestätigung an Client senden
+                    
+                    // Für jeden Client einen eigenen Listening-Thread starten
+                    startListening(reader, onMessageReceived)
+                    
+                    // Initialer Handshake pro Client erfolgreich
+                    onHandshakeDone(true)
+                } else {
+                    socket.close()
+                    clientSockets.remove(socket)
+                    clientWriters.remove(writer)
+                }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Fehler beim Hosting", e)
-            onStatusUpdate("Fehler beim Hosting: ${e.message}")
-            onHandshakeDone(false)
+            Log.e(TAG, "Kritischer Fehler im Host-Node", e)
+            onStatusUpdate("Netzwerk-Fehler: ${e.message}")
         }
     }
 
     /**
      * Verbindet sich als Client mit einem Host.
-     * @param hostIp Die IP-Adresse des Hosts.
-     * @param onStatusUpdate Callback für Statusänderungen.
-     * @param onHandshakeDone Callback, wenn der Handshake erfolgreich war.
-     * @param onMessageReceived Callback für eingehende Nachrichten nach dem Handshake.
      */
     suspend fun connectToHost(
         hostIp: String,
@@ -93,82 +98,85 @@ object NetworkManager {
         onMessageReceived: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
-            onStatusUpdate("Verbinde zu $hostIp...")
-            val clientSocket = Socket(hostIp, PORT)
-            socket = clientSocket
-            
-            writer = PrintWriter(clientSocket.getOutputStream(), true)
-            val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
+            isHost = false
+            onStatusUpdate("Infiltriere Host $hostIp...")
+            val socket = Socket(hostIp, PORT)
+            clientSocket = socket
+            clientWriter = PrintWriter(socket.getOutputStream(), true)
+            val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
 
-            // Handshake: Nachricht an Server senden
-            onStatusUpdate("Sende Handshake...")
-            writer?.println("Hello Vault")
-
-            // Antwort vom Server lesen
+            // Handshake
+            clientWriter?.println("Hello Vault")
             val response = reader.readLine()
-            Log.d(TAG, "Client empfing: $response")
-
+            
             if (response == "Access Granted") {
-                onStatusUpdate("Verbunden: Access Granted")
+                onStatusUpdate("Handshake erfolgreich. Zugriff gewährt.")
                 onHandshakeDone(true)
-                
-                // Starte Listening-Loop für In-Game-Kommunikation
                 startListening(reader, onMessageReceived)
             } else {
-                onStatusUpdate("Verbindung abgelehnt: $response")
+                onStatusUpdate("Zugriff verweigert.")
                 onHandshakeDone(false)
                 closeConnection()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Fehler bei Verbindung", e)
-            onStatusUpdate("Fehler bei Verbindung: ${e.message}")
+            Log.e(TAG, "Verbindungsabbruch", e)
+            onStatusUpdate("Fehler: ${e.message}")
             onHandshakeDone(false)
         }
     }
 
-    /**
-     * Startet einen Coroutine-Job, der kontinuierlich auf Nachrichten vom Partner lauscht.
-     */
     private fun startListening(reader: BufferedReader, onMessageReceived: (String) -> Unit) {
-        listenJob?.cancel()
-        listenJob = CoroutineScope(Dispatchers.IO).launch {
+        val job = CoroutineScope(Dispatchers.IO).launch {
             try {
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
-                    line?.let { 
-                        Log.d(TAG, "Nachricht empfangen: $it")
-                        onMessageReceived(it) 
-                    }
+                    line?.let { onMessageReceived(it) }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Fehler beim Lesen vom Socket", e)
+                Log.e(TAG, "Stream unterbrochen", e)
             } finally {
                 onMessageReceived("CONNECTION_LOST")
+            }
+        }
+        listenJobs.add(job)
+    }
+
+    /**
+     * Sendet eine Nachricht. Wenn Host: Broadcast an alle. Wenn Client: Nur an Host.
+     */
+    fun sendMessage(message: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            if (isHost) {
+                synchronized(clientWriters) {
+                    clientWriters.forEach { it.println(message) }
+                }
+            } else {
+                clientWriter?.println(message)
             }
         }
     }
 
     /**
-     * Sendet eine Nachricht an das Partner-Gerät.
-     * @param message Die zu sendende Nachricht.
-     */
-    fun sendMessage(message: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            writer?.println(message)
-        }
-    }
-
-    /**
-     * Schließt die aktuelle Verbindung und beendet den Listening-Job.
+     * Beendet alle Verbindungen sauber.
      */
     fun closeConnection() {
-        listenJob?.cancel()
-        try {
-            socket?.close()
-        } catch (e: Exception) {
-            Log.e(TAG, "Fehler beim Schließen des Sockets", e)
+        synchronized(listenJobs) {
+            listenJobs.forEach { it.cancel() }
+            listenJobs.clear()
         }
-        socket = null
-        writer = null
+        try {
+            clientSocket?.close()
+            synchronized(clientSockets) {
+                clientSockets.forEach { it.close() }
+                clientSockets.clear()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Fehler beim Bereinigen", e)
+        }
+        clientSocket = null
+        clientWriter = null
+        synchronized(clientWriters) {
+            clientWriters.clear()
+        }
     }
 }

@@ -2,6 +2,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE20-CYBERPUNK-THEME]
+// PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.ClipData
@@ -110,48 +111,40 @@ fun StartScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                if (!isConnected) {
-                    if (hostIp != null) {
-                        // Host-Ansicht: Zeige QR-Code
-                        HostQrView(hostIp!!, context)
-                    } else if (showManualInput) {
-                        // Manueller Fallback
-                        ManualIpView(
-                            ip = ipAddressInput,
-                            onIpChange = { ipAddressInput = it },
-                            onJoin = { viewModel.joinGame(ipAddressInput) },
-                            onBack = { showManualInput = false }
-                        )
-                    } else {
-                        // Haupt-Optionen (Cyberpunk Buttons)
-                        CyberButton(
-                            text = "START AS HOST",
-                            onClick = { viewModel.startHosting() }
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        CyberButton(
-                            text = "JOIN AS CLIENT",
-                            onClick = { viewModel.openScanner() }
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        TextButton(onClick = { showManualInput = true }) {
-                            Text(
-                                "MANUAL OVERRIDE (IP)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextGreen
-                            )
-                        }
-                    }
-                } else {
-                    CyberButton(
-                        text = "INITIATE MISSION",
-                        onClick = onStartGame,
-                        primary = true
+                if (hostIp != null) {
+                    // Host-Ansicht: Zeige QR-Code bis der erste Client kommt
+                    HostQrView(hostIp!!, context)
+                } else if (showManualInput) {
+                    // Manueller Fallback
+                    ManualIpView(
+                        ip = ipAddressInput,
+                        onIpChange = { ipAddressInput = it },
+                        onJoin = { viewModel.joinGame(ipAddressInput) },
+                        onBack = { showManualInput = false }
                     )
+                } else {
+                    // Haupt-Optionen (Cyberpunk Buttons)
+                    CyberButton(
+                        text = "START AS HOST",
+                        onClick = { viewModel.startHosting() }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    CyberButton(
+                        text = "JOIN AS CLIENT",
+                        onClick = { viewModel.openScanner() }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextButton(onClick = { showManualInput = true }) {
+                        Text(
+                            "MANUAL OVERRIDE (IP)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextGreen
+                        )
+                    }
                 }
             }
         }
