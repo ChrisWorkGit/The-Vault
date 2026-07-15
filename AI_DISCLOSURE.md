@@ -291,3 +291,56 @@ Integration der `RECORD_AUDIO` Berechtigungen im Manifest. Das Team definierte d
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Vorgabe des synchronisierten P2P-Protokolls für die Spielerliste. Das Team passte den Workflow so an, dass der Host erst bei Verbindung des ersten Clients vom StartScreen in die Lobby wechselt, um eine bessere UX zu gewährleisten. Zudem wurde die Mindestanzahl von 2 Agenten für den Spielstart sowie die Skalierung des QR-Codes (size 300) und der Slots für optimale Lesbarkeit manuell optimiert.
 
+### 🔹 Referenz: [REF-ISSUE03-ROOM-SETUP] & [REF-ISSUE28-HIGHSCORE-SCREEN]
+* **Datum:** 15.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+  * `app/src/main/java/com/uniprojekt/thevault/data/model/HeistStat.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/data/dao/HeistStatDao.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/data/VaultDatabase.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/data/VaultRepository.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/ui/screens/StartScreen.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/ui/screens/HighscoreScreen.kt`
+  * `app/src/main/AndroidManifest.xml`
+  * `app/src/main/res/xml/file_paths.xml`
+* **Inhalt/Ziel:** Implementierung der lokalen Room-Persistenz für Heist-Statistiken, globaler Spiel-Timer, P2P-Synchronisation von Spielergebnissen und der Highscore-Bildschirm inklusive Share-Funktion (Bitmap-Rendering).
+
+#### Verwendeter Prompt:
+> Setze die lokale Persistenz (Room), die globale Zeitmessung, das Daten-Sharing über das P2P-Netzwerk und den Highscore-Bildschirm inklusive Share-Funktion um.
+> Anforderungen:
+> 1. Datenbank-Setup: Entität HeistStat (Timestamp, Players, Duration, Sequence, Errors, isWin). DAO mit insert und ordered Queries.
+> 2. Spiel-Timer: Ticking-Timer im GameViewModel, Anzeige in einer Neon-Leiste oben im GameScreen.
+> 3. Netzwerk-Sync: Host generiert HeistStat-JSON und sendet HEIST_STAT_SUMMARY an alle Clients am Ende der Runde.
+> 4. Highscore-Screen: Cyberpunk-Stil, Sektionen für alle Metriken, "Screenshot teilen"-Funktion via Intent.ACTION_SEND und FileProvider. "Breach Archive" Button im StartScreen.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Definition des `HeistStat`-Schemas und Auswahl der relevanten Metriken zur Erfüllung des Uni-Kriteriums "Data Centricity". Das Team konfigurierte den `FileProvider` manuell und erstellte die `file_paths.xml`. Zudem wurde die manuelle JSON-Serialisierung (Regex-basiert) im ViewModel validiert, um den Overhead durch externe Bibliotheken gering zu halten. Die UI-Integration des Timers in die globale `MainApp`-Struktur wurde zur besseren UX feinjustiert.
+
+### 🔹 Referenz: [REF-FIX-RANDOM-MINIGAME]
+* **Datum:** 15.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+  * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+* **Inhalt/Ziel:** Behebung der statischen Spielabfolge. Implementierung einer dynamischen Randomisierung der Minispiel-Sequenz bei jedem Heist-Start zur Erhöhung des Wiederspielwerts.
+
+#### Verwendeter Prompt:
+> Überprüfe kurz ohne was zu ändern ob die Reihenfolge an Minispielen wirklich random ist. Falls nicht, passe das kurz unter [REF-FIX-RANDOM-MINIGAME] an.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Identifikation der linearen Index-Logik als Schwachstelle für das Gamedesign. Das Team entschied sich gegen eine rein zufällige Auswahl pro Level (um Dubletten zu vermeiden) und instruierte die KI, stattdessen die gesamte Liste (`defaultMinigames`) einmalig pro Spielstart zu mischen (`shuffled()`). Dies stellt sicher, dass jedes Minispiel genau einmal in variierender Reihenfolge vorkommt.
+
+### 🔹 Referenz: [REF-FIX-RANDOM-MINIGAME]
+* **Datum:** 15.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+  * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+  * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+* **Inhalt/Ziel:** Synchronisation der zufälligen Spielreihenfolge über das P2P-Netzwerk und Implementierung einer Barriere ("Waiting for Team"), damit alle Spieler gleichzeitig zum nächsten Minispiel voranschreiten.
+
+#### Verwendeter Prompt:
+> Passe das kurz unter [REF-FIX-RANDOM-MINIGAME] an: Die Reihenfolge muss bei jedem Spieler gleich sein. Wenn ein Spieler schneller fertig ist, muss er warten, bis alle fertig sind, bevor es zum nächsten Minispiel geht.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Konzeption des Synchronisations-Protokolls: Der Host übernimmt die Rolle des "Masters" und verteilt die gewürfelte Sequenz. Das Team spezifizierte den "Waiting for Team"-Status als Teil der Game State Machine, um Race Conditions zu vermeiden, wenn ein Client schneller als der Host ist.

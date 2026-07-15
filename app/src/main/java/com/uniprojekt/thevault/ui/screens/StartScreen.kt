@@ -3,18 +3,23 @@
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE20-CYBERPUNK-THEME]
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
+// PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
+// PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +41,7 @@ import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 // AI-Generated: Local P2P Socket Foundation
 // AI-Generated: QR-Code P2P Onboarding Layer with Manual Fallback
 // AI-Generated: Cyberpunk Design System & Neon UI Layer
+// AI-Generated: Room Database Statistics & Shareable Highscore Screen
 
 /**
  * Der Startbildschirm (Lobby) von "The Vault" im Cyberpunk-Look.
@@ -136,6 +142,20 @@ fun StartScreen(
                         onClick = { viewModel.openScanner() }
                     )
                     
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = { viewModel.openArchive() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CyberpunkShape(),
+                        border = BorderStroke(1.dp, TextGreen),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextGreen)
+                    ) {
+                        Icon(Icons.Default.VpnKey, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("BREACH ARCHIVE", fontFamily = FontFamily.Monospace)
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     TextButton(onClick = { showManualInput = true }) {

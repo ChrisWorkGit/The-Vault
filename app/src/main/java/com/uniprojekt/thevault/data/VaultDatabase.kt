@@ -5,8 +5,10 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.uniprojekt.thevault.data.dao.HeistStatDao
 import com.uniprojekt.thevault.data.dao.VaultDao
 import com.uniprojekt.thevault.data.model.GameSession
+import com.uniprojekt.thevault.data.model.HeistStat
 import com.uniprojekt.thevault.data.model.MinigameResult
 
 /**
@@ -14,9 +16,10 @@ import com.uniprojekt.thevault.data.model.MinigameResult
  * Verwaltet die lokale Persistenz der Spielhistorie.
  */
 // AI-Generated: Highly Extensible Room Persistence Layer for Asynchronous Team Metrics
-@Database(entities = [GameSession::class, MinigameResult::class], version = 1, exportSchema = false)
+@Database(entities = [GameSession::class, MinigameResult::class, HeistStat::class], version = 2, exportSchema = false)
 abstract class VaultDatabase : RoomDatabase() {
     abstract fun vaultDao(): VaultDao
+    abstract fun heistStatDao(): HeistStatDao
 
     companion object {
         @Volatile

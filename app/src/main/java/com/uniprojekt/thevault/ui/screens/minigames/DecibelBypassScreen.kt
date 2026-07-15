@@ -55,7 +55,8 @@ import kotlin.random.Random
 @Composable
 fun DecibelBypassScreen(
     onComplete: () -> Unit,
-    onFail: () -> Unit
+    onFail: () -> Unit,
+    onMistake: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -131,6 +132,7 @@ fun DecibelBypassScreen(
                             if (now - lastErrorTimestamp > gracePeriodMs) {
                                 withContext(Dispatchers.Main) {
                                     errors++
+                                    onMistake()
                                     lastErrorTimestamp = now
                                     // Kurzer visueller Feedback-Effekt hier möglich
                                 }
@@ -189,6 +191,7 @@ fun DecibelBypassScreen(
                 if (diff > toleranceThreshold && (now - lastErrorTimestamp > gracePeriodMs)) {
                     triggerAlarm()
                     errors++
+                    onMistake()
                     lastErrorTimestamp = now
                 }
             }

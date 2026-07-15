@@ -1,22 +1,24 @@
-// PROMPT-REFERENZ: [REF-ISSUE09-CORE-ARCH]
-// PROMPT-REFERENZ: [REF-ISSUE02-NET-BASE]
-// PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
-// PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
-// PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
-// PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
+// PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
+// PROMPT-REFERENZ: [REF-FIX-RANDOM-MINIGAME]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uniprojekt.thevault.data.VaultRepository
 import com.uniprojekt.thevault.data.model.GameSession
+import com.uniprojekt.thevault.data.model.HeistStat
 import com.uniprojekt.thevault.data.model.MinigameResult
 import com.uniprojekt.thevault.network.NetworkManager
 import com.uniprojekt.thevault.network.NetworkUtils
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * GameViewModel verwaltet den globalen Spielzustand und die State Machine von "The Vault".
@@ -27,6 +29,7 @@ class GameViewModel : ViewModel() {
     // AI-Generated: Local P2P Socket Foundation
     // AI-Generated: QR-Code P2P Onboarding Layer with Manual Fallback
     // AI-Generated: Multiplayer Lobby & Synchronized In-Game Menu
+    // AI-Generated: Room Database Statistics & Shareable Highscore Screen
 
     /**
      * Definiert die möglichen Zustände des Spiels.
@@ -34,9 +37,11 @@ class GameViewModel : ViewModel() {
     sealed interface GameState {
         object Lobby : GameState
         object StartScreen : GameState
+        object Archive : GameState
         data class InLobby(val players: List<String>, val isHost: Boolean) : GameState
         data class Playing(val index: Int, val name: String) : GameState
-        data class GameOver(val isWin: Boolean, val reason: String? = null) : GameState
+        data class WaitingForTeam(val nextIndex: Int) : GameState
+        data class GameOver(val isWin: Boolean, val reason: String? = null, val stat: HeistStat? = null) : GameState
     }
 
     private val _networkStatus = MutableStateFlow("Bereit für Verbindung")
@@ -60,8 +65,23 @@ class GameViewModel : ViewModel() {
     private val _gameState = MutableStateFlow<GameState>(GameState.StartScreen)
     val gameState: StateFlow<GameState> = _gameState.asStateFlow()
 
-    private val minigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick")
+    private val _timerSeconds = MutableStateFlow(0L)
+    val timerSeconds: StateFlow<Long> = _timerSeconds.asStateFlow()
+    private var timerJob: Job? = null
+
+    private val _totalErrors = MutableStateFlow(0)
+    val totalErrors: StateFlow<Int> = _totalErrors.asStateFlow()
+
+    private val playedGames = mutableListOf<String>()
+
+    // AI-Generated: Dynamic Minigame Sequence handling
+    private val activeMinigameSequence = mutableListOf<String>()
+    private val readyPlayers = mutableSetOf<String>()
+    private val defaultMinigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick")
     private var vaultRepository: VaultRepository? = null
+
+    private val _archivedStats = MutableStateFlow<List<HeistStat>>(emptyList())
+    val archivedStats: StateFlow<List<HeistStat>> = _archivedStats.asStateFlow()
 
     fun updatePlayerName(newName: String) {
         _playerName.value = newName
@@ -162,14 +182,35 @@ class GameViewModel : ViewModel() {
                     updateLobbyState()
                 }
             }
+            message.startsWith("START_GAME_TRIGGER:") -> {
+                val seq = message.substringAfter("START_GAME_TRIGGER:").split(",")
+                startGame(seq)
+            }
             message == "START_GAME_TRIGGER" -> {
                 startGame()
             }
+            message == "MINIGAME_READY" -> {
+                if (isHost) {
+                    handleClientReady(hostReady = false)
+                }
+            }
             message == "COMPLETE_MINIGAME_TRIGGER" -> {
-                completeCurrentMinigame()
+                // Finale Bestätigung vom Host, dass alle fertig sind
+                proceedToNextMinigame()
+            }
+            message.startsWith("HEIST_STAT_SUMMARY:") -> {
+                val json = message.substringAfter("HEIST_STAT_SUMMARY:")
+                val stat = parseHeistStat(json)
+                if (stat != null) {
+                    saveHeistStatLocally(stat)
+                    triggerGameOver(isWin = stat.isVictory, stat = stat)
+                }
             }
             message == "GAME_OVER:DISCONNECTED_BY_USER" -> {
                 triggerGameOver(isWin = false, reason = "VERBINDUNG UNTERBROCHEN")
+            }
+            message == "DEBUG_TEAM_COMPLETE_REQUEST" -> {
+                if (isHost) debugCompleteForTeam()
             }
             message == "CONNECTION_LOST" -> {
                 if (_gameState.value is GameState.Playing) {
@@ -181,24 +222,171 @@ class GameViewModel : ViewModel() {
 
     fun initiateHeist() {
         if (isHost) {
-            NetworkManager.sendMessage("START_GAME_TRIGGER")
-            startGame()
+            val shuffled = defaultMinigames.shuffled()
+            val seqString = shuffled.joinToString(",")
+            NetworkManager.sendMessage("START_GAME_TRIGGER:$seqString")
+            startGame(shuffled)
         }
     }
 
-    fun startGame() {
-        _gameState.value = GameState.Playing(0, minigames[0])
+    fun startGame(sequence: List<String>? = null) {
+        // AI-Generated: [REF-FIX-RANDOM-MINIGAME] - Shuffle sequence for every heist
+        activeMinigameSequence.clear()
+        if (sequence != null) {
+            activeMinigameSequence.addAll(sequence)
+        } else {
+            activeMinigameSequence.addAll(defaultMinigames.shuffled())
+        }
+        
+        playedGames.clear()
+        playedGames.add(activeMinigameSequence[0])
+        _totalErrors.value = 0
+        _timerSeconds.value = 0
+        readyPlayers.clear()
+        _gameState.value = GameState.Playing(0, activeMinigameSequence[0])
+        startTimer()
+    }
+
+    private fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                _timerSeconds.value++
+            }
+        }
+    }
+
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+    }
+
+    fun formatTime(seconds: Long): String {
+        val mins = seconds / 60
+        val secs = seconds % 60
+        return "%02d:%02d".format(Locale.getDefault(), mins, secs)
+    }
+
+    fun addError() {
+        _totalErrors.value++
     }
 
     fun completeCurrentMinigame() {
         val currentState = _gameState.value
         if (currentState is GameState.Playing) {
-            val nextIndex = currentState.index + 1
-            if (nextIndex < minigames.size) {
-                _gameState.value = GameState.Playing(nextIndex, minigames[nextIndex])
+            // Spieler ist lokal fertig, muss aber auf das Team warten
+            if (isHost) {
+                handleClientReady(hostReady = true) // Host ist selbst auch fertig
             } else {
-                _gameState.value = GameState.GameOver(isWin = true)
+                _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
+                NetworkManager.sendMessage("MINIGAME_READY")
             }
+        }
+    }
+
+    private fun handleClientReady(hostReady: Boolean) {
+        if (isHost) {
+            synchronized(readyPlayers) {
+                if (hostReady) {
+                    readyPlayers.add("HOST")
+                } else {
+                    // Ein Client hat MINIGAME_READY gesendet
+                    val currentReady = readyPlayers.size + 1
+                    readyPlayers.add("CLIENT_$currentReady") 
+                }
+                
+                if (readyPlayers.size >= _players.value.size) {
+                    readyPlayers.clear()
+                    NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER")
+                    proceedToNextMinigame()
+                } else if (hostReady) {
+                    // Host ist fertig, aber wartet noch auf andere
+                    val currentState = _gameState.value
+                    if (currentState is GameState.Playing) {
+                        _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun proceedToNextMinigame() {
+        val currentState = _gameState.value
+        val currentIndex = when (currentState) {
+            is GameState.Playing -> currentState.index
+            is GameState.WaitingForTeam -> currentState.nextIndex - 1
+            else -> return
+        }
+        
+        val nextIndex = currentIndex + 1
+        if (nextIndex < activeMinigameSequence.size) {
+            playedGames.add(activeMinigameSequence[nextIndex])
+            _gameState.value = GameState.Playing(nextIndex, activeMinigameSequence[nextIndex])
+        } else {
+            finishHeist(isWin = true)
+        }
+    }
+
+    private fun finishHeist(isWin: Boolean, reason: String? = null) {
+        stopTimer()
+        if (isHost) {
+            val stat = HeistStat(
+                timestamp = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date()),
+                players = _players.value.joinToString(", "),
+                totalDurationSeconds = _timerSeconds.value,
+                gameSequence = playedGames.joinToString(" -> "),
+                totalErrorsMade = _totalErrors.value,
+                isVictory = isWin
+            )
+            // Broadcast stat to all clients
+            val json = serializeHeistStat(stat)
+            NetworkManager.sendMessage("HEIST_STAT_SUMMARY:$json")
+            saveHeistStatLocally(stat)
+            triggerGameOver(isWin = isWin, reason = reason, stat = stat)
+        } else if (reason != null) {
+            // Client triggered failure (e.g. connection lost)
+            triggerGameOver(isWin = isWin, reason = reason)
+        }
+    }
+
+    private fun saveHeistStatLocally(stat: HeistStat) {
+        viewModelScope.launch {
+            vaultRepository?.insertHeistStat(stat)
+        }
+    }
+
+    /**
+     * Hilfsfunktion zur einfachen "Serialisierung" der Statistik für das P2P-Netzwerk.
+     */
+    private fun serializeHeistStat(stat: HeistStat): String {
+        // AI-Generated: Manuelle JSON-Serialisierung für minimalen Overhead ohne externe Libs
+        return """{"timestamp":"${stat.timestamp}","players":"${stat.players}","duration":${stat.totalDurationSeconds},"sequence":"${stat.gameSequence}","errors":${stat.totalErrorsMade},"win":${stat.isVictory}}"""
+    }
+
+    /**
+     * Hilfsfunktion zur einfachen "Deserialisierung" der Statistik.
+     */
+    private fun parseHeistStat(json: String): HeistStat? {
+        // AI-Generated: Manuelle JSON-Deserialisierung (Regex-basiert für Einfachheit)
+        return try {
+            val timestamp = Regex("\"timestamp\":\"(.*?)\"").find(json)?.groupValues?.get(1) ?: ""
+            val players = Regex("\"players\":\"(.*?)\"").find(json)?.groupValues?.get(1) ?: ""
+            val duration = Regex("\"duration\":(\\d+)").find(json)?.groupValues?.get(1)?.toLong() ?: 0L
+            val sequence = Regex("\"sequence\":\"(.*?)\"").find(json)?.groupValues?.get(1) ?: ""
+            val errors = Regex("\"errors\":(\\d+)").find(json)?.groupValues?.get(1)?.toInt() ?: 0
+            val win = Regex("\"win\":(true|false)").find(json)?.groupValues?.get(1)?.toBoolean() ?: false
+            
+            HeistStat(
+                timestamp = timestamp,
+                players = players,
+                totalDurationSeconds = duration,
+                gameSequence = sequence,
+                totalErrorsMade = errors,
+                isVictory = win
+            )
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -206,24 +394,53 @@ class GameViewModel : ViewModel() {
      * Debug-Funktion: Beendet das aktuelle Minispiel für das gesamte Team synchron.
      */
     fun debugCompleteForTeam() {
-        NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER")
-        completeCurrentMinigame()
+        if (isHost) {
+            synchronized(readyPlayers) {
+                readyPlayers.clear()
+                NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER")
+                proceedToNextMinigame()
+            }
+        } else {
+            // Client sendet Debug-Request an Host
+            NetworkManager.sendMessage("DEBUG_TEAM_COMPLETE_REQUEST")
+        }
     }
 
     fun failCurrentMinigame() {
-        triggerGameOver(isWin = false)
+        finishHeist(isWin = false)
     }
 
     fun abortGame() {
+        stopTimer()
         NetworkManager.sendMessage("GAME_OVER:DISCONNECTED_BY_USER")
         resetToLobby()
     }
 
-    fun triggerGameOver(isWin: Boolean, reason: String? = null) {
-        _gameState.value = GameState.GameOver(isWin, reason)
+    fun triggerGameOver(isWin: Boolean, reason: String? = null, stat: HeistStat? = null) {
+        stopTimer()
+        _gameState.value = GameState.GameOver(isWin, reason, stat)
+    }
+
+    fun openArchive() {
+        _gameState.value = GameState.Archive
+    }
+
+    fun viewStat(stat: HeistStat) {
+        _gameState.value = GameState.GameOver(isWin = stat.isVictory, stat = stat)
+    }
+
+    fun deleteStat(stat: HeistStat) {
+        viewModelScope.launch {
+            vaultRepository?.deleteHeistStat(stat.id)
+        }
+    }
+
+    fun backToStart() {
+        _gameState.value = GameState.StartScreen
     }
 
     fun resetToLobby() {
+        stopTimer()
         NetworkManager.closeConnection()
         _gameState.value = GameState.StartScreen
         _isConnected.value = false
@@ -235,7 +452,12 @@ class GameViewModel : ViewModel() {
 
     fun openScanner() = viewModelScope.launch { _showScanner.value = true }
     fun closeScanner() = viewModelScope.launch { _showScanner.value = false }
-    fun initRepository(repository: VaultRepository) { this.vaultRepository = repository }
+    fun initRepository(repository: VaultRepository) { 
+        this.vaultRepository = repository 
+        viewModelScope.launch {
+            repository.allHeistStats.collect { _archivedStats.value = it }
+        }
+    }
     fun saveFinalSession(session: GameSession, results: List<MinigameResult>) {
         viewModelScope.launch { vaultRepository?.saveFullSession(session, results) }
     }

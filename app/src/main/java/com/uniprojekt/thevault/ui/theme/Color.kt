@@ -18,6 +18,7 @@ val Pink40 = Color(0xFF7D5260)
 // Cyberpunk Palette
 val CyberBackground = Color(0xFF040805)
 val NeonGreen = Color(0xFF00FF66)
+val NeonRed = Color(0xFFFF0033)
 val TextGreen = Color(0xFF00AA44)
 val DarkGreen = Color(0xFF003311)
 
