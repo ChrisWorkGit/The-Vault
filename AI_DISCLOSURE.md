@@ -344,3 +344,45 @@ Identifikation der linearen Index-Logik als Schwachstelle für das Gamedesign. D
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Konzeption des Synchronisations-Protokolls: Der Host übernimmt die Rolle des "Masters" und verteilt die gewürfelte Sequenz. Das Team spezifizierte den "Waiting for Team"-Status als Teil der Game State Machine, um Race Conditions zu vermeiden, wenn ein Client schneller als der Host ist.
+
+### 🔹 Referenz: [REF-ISSUE30-REAL-DEVICE-FIX]
+Datum: 16.07.2026
+Genutztes Tool: Gemini (Android Studio AI Plugin)
+Betroffene Dateien:
+app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt
+app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt
+
+Inhalt/Ziel: Behebung von Deadlocks auf physischen Geräten. Umstellung auf IP-basiertes Player-Tracking und Implementierung eines Synchronisations-Cooldowns zur Vermeidung von Race-Conditions im P2P-Netzwerk.
+Verwendeter Prompt:
+Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+Die neue Referenz-ID für diese Aufgabe lautet: [REF-ISSUE30-REAL-DEVICE-FIX]
+
+KONTEXT:
+Beim Testen auf physischen Geräten kommt es nach dem Abschluss eines Minigames zu einem Deadlock im "Waiting for Team"-Screen. Die Ursachen sind:
+1. Eine ungenaue Zählung der fertigen Spieler im Host (doppelte Pakete oder String-Vergleiche ohne eindeutige ID-Zuordnung).
+2. Ein Synchronisations-Loch: Clients erhalten das Weiterschalt-Signal (COMPLETE_MINIGAME_TRIGGER) vom Host zu schnell, während ihr lokaler UI-State noch im "Playing"- oder Übergangs-Zustand feststeckt, weshalb das Signal verworfen wird.
+
+AUFGABE:
+Repariere die Verbindungs- und Synchronisations-Logik im 'NetworkManager.kt' und 'GameViewModel.kt' für den stabilen Betrieb auf echten Geräten.
+
+Bitte setze folgende technische Fixes um:
+
+1. Eindeutige ID-Identifikation statt einfacher Strings:
+  - Der Host darf fertige Spieler in `readyPlayers` nicht als einfache, anonyme "CLIENT_X" Strings speichern.
+  - Verwende stattdessen eine `Set<String>` (anstelle einer Liste), um Duplikate durch eventuellen Paket-Jitter automatisch auszuschließen.
+  - Identifiziere die Clients eindeutig über ihre IP-Adresse (z. B. `socket.inetAddress.hostAddress`) oder eine beim Handshake generierte, eindeutige `UUID`.
+
+2. Beseitigung des Synchronisations-Lochs (State-Buffer & Queuing):
+  - Wenn der Host ein `COMPLETE_MINIGAME_TRIGGER`-Signal sendet, dürfen die Clients dieses nicht verwerfen, nur weil ihre UI noch eine Millisekunde hinterherhinkt.
+  - Implementiere im GameViewModel einen kurzen Empfangs-Puffer oder stelle sicher, dass Netzwerk-Signale für den Zustandswechsel asynchron verarbeitet werden (z. B. über eine Kotlin StateFlow-Kette, die den State erst aktualisiert, sobald das Gerät bereit ist).
+  - Alternativ: Lass den Host eine kurze Verzögerung (z.B. 300-500ms Cooldown) einbauen, nachdem der letzte Spieler bereit war, bevor er den globalen Trigger an alle herausschickt. Dies gibt allen physischen Geräten genug Zeit, ihren lokalen UI-Wechsel in den "Waiting for Team"-Zustand abzuschließen.
+
+3. Robustes Handling von Verbindungsabbrüchen:
+  - Falls ein Socket auf einem echten Gerät kurzzeitig die Verbindung verliert, implementiere einen automatischen Bereinigungs-Mechanismus auf dem Host, der diesen Spieler aus der aktiven `readyPlayers`-Menge entfernt, damit die verbliebenen Spieler nicht im "Waiting"-Screen blockiert werden.
+
+DENK AN DIE ENTWICKLUNGS-RICHTLINIEN AUS DER AI_RULES.txt:
+- Kette die neue ID [REF-ISSUE30-REAL-DEVICE-FIX] im Header aller geänderten Dateien an.
+- Nutze im neuen Code den Kommentar: // AI-Generated: Real Device Connection & Sync Patch
+- Schreibe deutsche Kommentare, die das Set-basierte Tracking und die Paket-Verzögerung für den Präsentationstermin erklären.
+Erbrachte Eigenleistung des Teams nach Generierung:
+Analyse der Netzwerk-Logs auf physischen Testgeräten zur Identifikation des Synchronisations-Lochs (Signalverlust bei schnellen Zustandswechseln). Das Team entschied sich für einen deterministischen Ansatz: Die Umstellung von einer Liste auf ein Set im readyPlayers-Tracking stellt sicher, dass das System idempotent gegenüber Paket-Duplikaten ist. Zudem wurde die senderId-Logik in den NetworkManager integriert, um eine eindeutige Zuordnung der Readiness-Signale ohne zusätzlichen Protokoll-Overhead zu ermöglichen. Durch das manuelle Einfügen eines 400ms-Delays wurde die Hardware-Latenz physischer Displays erfolgreich ausgeglichen.

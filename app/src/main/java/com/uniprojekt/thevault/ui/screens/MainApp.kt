@@ -53,6 +53,7 @@ fun MainApp(
     val playerName by viewModel.playerName.collectAsState()
     val hostIp by viewModel.hostIp.collectAsState()
     val timerSeconds by viewModel.timerSeconds.collectAsState()
+    val isGameActive by viewModel.isGameActive.collectAsState()
     val archivedStats by viewModel.archivedStats.collectAsState()
 
     Surface(modifier = Modifier.padding(paddingValues)) {
@@ -91,19 +92,25 @@ fun MainApp(
                                 DecibelBypassScreen(
                                     onComplete = { viewModel.completeCurrentMinigame() },
                                     onFail = { viewModel.failCurrentMinigame() },
-                                    onMistake = { viewModel.addError() }
+                                    onMistake = { viewModel.addError() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
                                 )
                             }
                             "ShakeDecrypt" -> {
                                 ShakeDecryptScreen(
                                     onComplete = { viewModel.completeCurrentMinigame() },
-                                    onFail = { viewModel.failCurrentMinigame() }
+                                    onFail = { viewModel.failCurrentMinigame() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
                                 )
                             }
                             "LockPick" -> {
                                 LockpickScreen(
                                     onComplete = { viewModel.completeCurrentMinigame() },
-                                    onFail = { viewModel.failCurrentMinigame() }
+                                    onFail = { viewModel.failCurrentMinigame() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
                                 )
                             }
                             else -> {

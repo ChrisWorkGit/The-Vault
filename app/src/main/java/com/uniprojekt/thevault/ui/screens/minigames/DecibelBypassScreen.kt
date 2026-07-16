@@ -56,7 +56,9 @@ import kotlin.random.Random
 fun DecibelBypassScreen(
     onComplete: () -> Unit,
     onFail: () -> Unit,
-    onMistake: () -> Unit = {}
+    onMistake: () -> Unit = {},
+    onReady: () -> Unit = {},
+    isGameActive: Boolean = true
 ) {
     val context = LocalContext.current
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -100,11 +102,15 @@ fun DecibelBypassScreen(
             val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
             isVolumeMax = current >= max
             if (isVolumeMax && hasPermission && !isPhaseActive) {
-                isPhaseActive = true
+                // AI-Generated: Signalisiere Bereitschaft ans Team
+                onReady()
             }
             delay(500)
         }
     }
+
+    // Die Spielphase startet erst, wenn das gesamte Team bereit ist (isGameActive)
+    isPhaseActive = isGameActive && hasPermission && isVolumeMax
 
     // --- Mikrofon Überwachung (Dezibel-Bypass Logik) ---
     LaunchedEffect(hasPermission) {
