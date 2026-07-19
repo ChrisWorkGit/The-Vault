@@ -81,7 +81,7 @@ class GameViewModel : ViewModel() {
     private val activeMinigameSequence = mutableListOf<String>()
     private val readyPlayers = mutableSetOf<String>()
     private val startReadyPlayers = mutableSetOf<String>()
-    private val defaultMinigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick", "GyroLock")
+    private val defaultMinigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick", "GyroLock", "LaserBarrier")
     private var vaultRepository: VaultRepository? = null
 
     private val _archivedStats = MutableStateFlow<List<HeistStat>>(emptyList())
