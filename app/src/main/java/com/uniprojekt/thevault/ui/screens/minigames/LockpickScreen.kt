@@ -34,8 +34,7 @@ import kotlin.random.Random
  * Minispiel "Lockpicking".
  *
  * Jeder Spieler sieht die Zylinder eines Schlosses und muss mit seinem Dietrich versuchen die Zylinder einrasten zu lassen.
- * Das kann mit vor und hinterkippen des Geräts bewirkt werden. Zusätzlich gibt es einen Button, um die Neutralstellung während dem Spiel zurückzusetzen.
- * ACHTUNG: Diese Implementierung ist für ein einzelnes Gerät. Eine echte Mehrspielerfunktionalität ist hier noch nicht enthalten.
+ * Das kann mit vor und hinterkippen des Geräts bewirkt werden.
  */
 
 private const val PIN_COUNT = 5
