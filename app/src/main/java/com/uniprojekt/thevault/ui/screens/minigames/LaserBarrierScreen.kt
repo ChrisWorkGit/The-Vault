@@ -161,18 +161,6 @@ fun LaserBarrierScreen(
             fontFamily = FontFamily.Monospace,
             color = TextGreen
         )
-
-        if (!isGameActive) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "WARTE AUF TEAM...",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                color = NeutralColor
-            )
-        }
-
         Spacer(modifier = Modifier.height(20.dp))
 
         Canvas(

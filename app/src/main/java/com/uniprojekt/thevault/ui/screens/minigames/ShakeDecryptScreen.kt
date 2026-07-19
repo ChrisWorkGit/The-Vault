@@ -45,6 +45,8 @@ fun ShakeDecryptScreen(
     }
     val hasSensor = accelerometer != null
 
+    val gameActiveState by rememberUpdatedState(isGameActive)
+
     val secretCode = remember { (1000..9999).random().toString() }
 
     var progress by remember { mutableFloatStateOf(0f) }
@@ -63,7 +65,7 @@ fun ShakeDecryptScreen(
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                if (isComplete || !isGameActive) return
+                if (isComplete || !gameActiveState) return
 
                 val gX = event.values[0] / SensorManager.GRAVITY_EARTH
                 val gY = event.values[1] / SensorManager.GRAVITY_EARTH
@@ -138,10 +140,10 @@ fun ShakeDecryptScreen(
 
         if (!hasSensor) {
             Spacer(modifier = Modifier.height(24.dp))
-            Text(text = "Kein Bewegungssensor gefunden - Simulation für Tests:")
+            Text(text = "Kein Bewegungssensor gefunden.")
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = {
-                if (!isComplete) {
+                if (!isComplete && isGameActive) {
                     progress = (progress + PROGRESS_PER_SHAKE).coerceAtMost(1f)
                     if (progress >= 1f) isComplete = true
                 }
