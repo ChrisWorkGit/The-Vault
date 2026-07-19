@@ -2,6 +2,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE17-QR-CONNECT]
 // PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
+// PROMPT-REFERENZ: [REF-ISSUE30-REAL-DEVICE-FIX]
 package com.uniprojekt.thevault.network
 
 import android.util.Log
@@ -30,7 +31,8 @@ object NetworkManager {
     private const val TAG = "NetworkManager"
     private const val PORT = 8888
 
-    // Host-spezifisch: Liste aller verbundenen Client-Sockets und deren Writer
+    // Host-spezifisch: Mapping von IP zu PrintWriter für gezielte Kommunikation
+    private val clientWritersMap = Collections.synchronizedMap(mutableMapOf<String, PrintWriter>())
     private val clientSockets = Collections.synchronizedList(mutableListOf<Socket>())
     private val clientWriters = Collections.synchronizedList(mutableListOf<PrintWriter>())
     
@@ -47,7 +49,7 @@ object NetworkManager {
     suspend fun startHost(
         onStatusUpdate: (String) -> Unit,
         onHandshakeDone: (Boolean) -> Unit,
-        onMessageReceived: (String) -> Unit
+        onMessageReceived: (String, String?) -> Unit // Geändert: IP als Absender-ID
     ) = withContext(Dispatchers.IO) {
         try {
             isHost = true
@@ -57,12 +59,14 @@ object NetworkManager {
             // Loop, um mehrere Clients zu akzeptieren
             while (clientSockets.size < 3) {
                 val socket = serverSocket.accept()
+                val clientIp = socket.inetAddress.hostAddress ?: "unknown_${clientSockets.size}"
                 clientSockets.add(socket)
                 
                 val writer = PrintWriter(socket.getOutputStream(), true)
                 clientWriters.add(writer)
+                clientWritersMap[clientIp] = writer
                 
-                onStatusUpdate("Agent verbunden: ${socket.inetAddress}")
+                onStatusUpdate("Agent verbunden: $clientIp")
                 
                 val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
                 
@@ -72,7 +76,7 @@ object NetworkManager {
                     writer.println("Access Granted") // Bestätigung an Client senden
                     
                     // Für jeden Client einen eigenen Listening-Thread starten
-                    startListening(reader, onMessageReceived)
+                    startListening(reader, clientIp, onMessageReceived)
                     
                     // Initialer Handshake pro Client erfolgreich
                     onHandshakeDone(true)
@@ -80,6 +84,7 @@ object NetworkManager {
                     socket.close()
                     clientSockets.remove(socket)
                     clientWriters.remove(writer)
+                    clientWritersMap.remove(clientIp)
                 }
             }
         } catch (e: Exception) {
@@ -95,7 +100,7 @@ object NetworkManager {
         hostIp: String,
         onStatusUpdate: (String) -> Unit,
         onHandshakeDone: (Boolean) -> Unit,
-        onMessageReceived: (String) -> Unit
+        onMessageReceived: (String, String?) -> Unit // Geändert: IP als Absender-ID
     ) = withContext(Dispatchers.IO) {
         try {
             isHost = false
@@ -112,7 +117,7 @@ object NetworkManager {
             if (response == "Access Granted") {
                 onStatusUpdate("Handshake erfolgreich. Zugriff gewährt.")
                 onHandshakeDone(true)
-                startListening(reader, onMessageReceived)
+                startListening(reader, "HOST", onMessageReceived)
             } else {
                 onStatusUpdate("Zugriff verweigert.")
                 onHandshakeDone(false)
@@ -125,17 +130,19 @@ object NetworkManager {
         }
     }
 
-    private fun startListening(reader: BufferedReader, onMessageReceived: (String) -> Unit) {
+    private fun startListening(reader: BufferedReader, senderId: String, onMessageReceived: (String, String?) -> Unit) {
         val job = CoroutineScope(Dispatchers.IO).launch {
             try {
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
-                    line?.let { onMessageReceived(it) }
+                    line?.let { onMessageReceived(it, senderId) }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Stream unterbrochen", e)
+                Log.e(TAG, "Stream unterbrochen von $senderId", e)
             } finally {
-                onMessageReceived("CONNECTION_LOST")
+                // AI-Generated: Real Device Connection & Sync Patch
+                // Informiere das ViewModel über den spezifischen Abbruch dieser Verbindung
+                onMessageReceived("CONNECTION_LOST_FROM:$senderId", senderId)
             }
         }
         listenJobs.add(job)
@@ -177,6 +184,9 @@ object NetworkManager {
         clientWriter = null
         synchronized(clientWriters) {
             clientWriters.clear()
+        }
+        synchronized(clientWritersMap) {
+            clientWritersMap.clear()
         }
     }
 }

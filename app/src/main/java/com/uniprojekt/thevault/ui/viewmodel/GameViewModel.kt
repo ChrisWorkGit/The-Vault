@@ -1,5 +1,5 @@
-// PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
 // PROMPT-REFERENZ: [REF-FIX-RANDOM-MINIGAME]
+// PROMPT-REFERENZ: [REF-ISSUE30-REAL-DEVICE-FIX]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -69,6 +69,9 @@ class GameViewModel : ViewModel() {
     val timerSeconds: StateFlow<Long> = _timerSeconds.asStateFlow()
     private var timerJob: Job? = null
 
+    private val _isGameActive = MutableStateFlow(false)
+    val isGameActive: StateFlow<Boolean> = _isGameActive.asStateFlow()
+
     private val _totalErrors = MutableStateFlow(0)
     val totalErrors: StateFlow<Int> = _totalErrors.asStateFlow()
 
@@ -77,6 +80,7 @@ class GameViewModel : ViewModel() {
     // AI-Generated: Dynamic Minigame Sequence handling
     private val activeMinigameSequence = mutableListOf<String>()
     private val readyPlayers = mutableSetOf<String>()
+    private val startReadyPlayers = mutableSetOf<String>()
     private val defaultMinigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick")
     private var vaultRepository: VaultRepository? = null
 
@@ -134,9 +138,8 @@ class GameViewModel : ViewModel() {
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
-                    // Status-Updates werden über handleNetworkMessage verarbeitet
                 },
-                onMessageReceived = { handleNetworkMessage(it) }
+                onMessageReceived = { msg, sender -> handleNetworkMessage(msg, sender) }
             )
         }
     }
@@ -151,17 +154,16 @@ class GameViewModel : ViewModel() {
                 onHandshakeDone = { success -> 
                     _isConnected.value = success
                     if (success) {
-                        // Client: Sofort in den Lobby-Zustand wechseln
                         _gameState.value = GameState.InLobby(listOf(_playerName.value), false)
                         NetworkManager.sendMessage("NAME_UPDATE:${_playerName.value}")
                     }
                 },
-                onMessageReceived = { handleNetworkMessage(it) }
+                onMessageReceived = { msg, sender -> handleNetworkMessage(msg, sender) }
             )
         }
     }
 
-    private fun handleNetworkMessage(message: String) {
+    private fun handleNetworkMessage(message: String, senderId: String?) {
         when {
             message.startsWith("NAME_UPDATE:") -> {
                 if (isHost) {
@@ -189,9 +191,19 @@ class GameViewModel : ViewModel() {
             message == "START_GAME_TRIGGER" -> {
                 startGame()
             }
+            message == "MEMBER_START_READY" -> {
+                if (isHost && senderId != null) {
+                    handleMemberStartReady(false, senderId)
+                }
+            }
+            message == "START_LEVEL_NOW" -> {
+                _isGameActive.value = true
+            }
             message == "MINIGAME_READY" -> {
-                if (isHost) {
-                    handleClientReady(hostReady = false)
+                if (isHost && senderId != null) {
+                    // AI-Generated: Real Device Connection & Sync Patch
+                    // Host registriert, dass ein Client fertig ist über seine eindeutige IP
+                    handleClientReady(hostReady = false, senderId = senderId)
                 }
             }
             message == "COMPLETE_MINIGAME_TRIGGER" -> {
@@ -211,6 +223,16 @@ class GameViewModel : ViewModel() {
             }
             message == "DEBUG_TEAM_COMPLETE_REQUEST" -> {
                 if (isHost) debugCompleteForTeam()
+            }
+            message.startsWith("CONNECTION_LOST_FROM:") -> {
+                val lostId = message.substringAfter("CONNECTION_LOST_FROM:")
+                if (isHost) {
+                    synchronized(readyPlayers) {
+                        readyPlayers.remove(lostId)
+                        // Wenn der Host auf diesen Spieler gewartet hat, prüfen wir ob es jetzt weitergehen kann
+                        checkAllPlayersReady()
+                    }
+                }
             }
             message == "CONNECTION_LOST" -> {
                 if (_gameState.value is GameState.Playing) {
@@ -242,7 +264,9 @@ class GameViewModel : ViewModel() {
         playedGames.add(activeMinigameSequence[0])
         _totalErrors.value = 0
         _timerSeconds.value = 0
+        _isGameActive.value = false
         readyPlayers.clear()
+        startReadyPlayers.clear()
         _gameState.value = GameState.Playing(0, activeMinigameSequence[0])
         startTimer()
     }
@@ -269,7 +293,34 @@ class GameViewModel : ViewModel() {
     }
 
     fun addError() {
-        _totalErrors.value++
+        if (_isGameActive.value) {
+            _totalErrors.value++
+        }
+    }
+
+    /**
+     * Signalisiert, dass der lokale Spieler bereit ist, das Minispiel zu starten
+     * (z.B. Berechtigungen erteilt, Lautstärke ok).
+     */
+    fun reportReadyToStart() {
+        if (isHost) {
+            handleMemberStartReady(true, "HOST")
+        } else {
+            NetworkManager.sendMessage("MEMBER_START_READY")
+        }
+    }
+
+    private fun handleMemberStartReady(hostReady: Boolean, senderId: String) {
+        if (isHost) {
+            synchronized(startReadyPlayers) {
+                startReadyPlayers.add(senderId)
+                if (startReadyPlayers.size >= _players.value.size) {
+                    startReadyPlayers.clear()
+                    NetworkManager.sendMessage("START_LEVEL_NOW")
+                    _isGameActive.value = true
+                }
+            }
+        }
     }
 
     fun completeCurrentMinigame() {
@@ -277,7 +328,7 @@ class GameViewModel : ViewModel() {
         if (currentState is GameState.Playing) {
             // Spieler ist lokal fertig, muss aber auf das Team warten
             if (isHost) {
-                handleClientReady(hostReady = true) // Host ist selbst auch fertig
+                handleClientReady(hostReady = true, senderId = "HOST") 
             } else {
                 _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
                 NetworkManager.sendMessage("MINIGAME_READY")
@@ -285,27 +336,39 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    private fun handleClientReady(hostReady: Boolean) {
+    private fun handleClientReady(hostReady: Boolean, senderId: String) {
         if (isHost) {
             synchronized(readyPlayers) {
-                if (hostReady) {
-                    readyPlayers.add("HOST")
-                } else {
-                    // Ein Client hat MINIGAME_READY gesendet
-                    val currentReady = readyPlayers.size + 1
-                    readyPlayers.add("CLIENT_$currentReady") 
-                }
+                // AI-Generated: Real Device Connection & Sync Patch
+                // Verwende ein Set und eindeutige IDs (IPs), um Duplikate durch Jitter zu verhindern
+                readyPlayers.add(senderId)
                 
-                if (readyPlayers.size >= _players.value.size) {
-                    readyPlayers.clear()
-                    NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER")
-                    proceedToNextMinigame()
-                } else if (hostReady) {
+                checkAllPlayersReady()
+
+                if (hostReady && readyPlayers.size < _players.value.size) {
                     // Host ist fertig, aber wartet noch auf andere
                     val currentState = _gameState.value
                     if (currentState is GameState.Playing) {
                         _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
                     }
+                }
+            }
+        }
+    }
+
+    private fun checkAllPlayersReady() {
+        if (isHost) {
+            // Wir prüfen gegen die aktuelle Anzahl der Sockets + 1 (Host)
+            // Falls ein Client disconnected ist, wird er oben aus readyPlayers entfernt
+            if (readyPlayers.size >= _players.value.size) {
+                readyPlayers.clear()
+                
+                // AI-Generated: Real Device Connection & Sync Patch
+                // Kurze Verzögerung einbauen, damit alle Clients Zeit haben, in den 'Waiting'-State zu wechseln
+                viewModelScope.launch {
+                    delay(400) // 400ms Cooldown für physische Geräte-Synchronisation
+                    NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER")
+                    proceedToNextMinigame()
                 }
             }
         }
@@ -320,6 +383,9 @@ class GameViewModel : ViewModel() {
         }
         
         val nextIndex = currentIndex + 1
+        _isGameActive.value = false
+        startReadyPlayers.clear()
+
         if (nextIndex < activeMinigameSequence.size) {
             playedGames.add(activeMinigameSequence[nextIndex])
             _gameState.value = GameState.Playing(nextIndex, activeMinigameSequence[nextIndex])

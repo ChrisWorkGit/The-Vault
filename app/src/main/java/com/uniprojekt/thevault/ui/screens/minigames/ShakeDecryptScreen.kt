@@ -33,7 +33,9 @@ private const val PROGRESS_PER_SHAKE = 0.05f
 @Composable
 fun ShakeDecryptScreen(
     onComplete: () -> Unit,
-    onFail: () -> Unit      // TODO: Punkteabzug? nur anderen Zwischenscreen anzeigen? Anderen Weg zum Tresor? Game OVer?
+    onFail: () -> Unit,
+    onReady: () -> Unit = {},
+    isGameActive: Boolean = true
 ) {
     val context = LocalContext.current
     val sensorManager = remember {
@@ -53,12 +55,16 @@ fun ShakeDecryptScreen(
 
     DisposableEffect(hasSensor) {
         if (!hasSensor) {
+            onReady() // Auch ohne Sensor bereit
             return@DisposableEffect onDispose { }
         }
 
+        // AI-Generated: Signalisiere Bereitschaft sofort beim Laden
+        onReady()
+
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
-                if (isComplete) return
+                if (isComplete || !isGameActive) return
 
                 val gX = event.values[0] / SensorManager.GRAVITY_EARTH
                 val gY = event.values[1] / SensorManager.GRAVITY_EARTH

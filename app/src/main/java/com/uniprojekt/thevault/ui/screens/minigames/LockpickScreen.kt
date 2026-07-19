@@ -76,7 +76,9 @@ private fun pinCenterX(index: Int): Float = HOUSING_LEFT + PIN_SLOT_W * index + 
 @Composable
 fun LockpickScreen(
     onComplete: () -> Unit,
-    onFail: () -> Unit
+    onFail: () -> Unit,
+    onReady: () -> Unit = {},
+    isGameActive: Boolean = true
 ) {
     val context = LocalContext.current
     val sensorManager = remember {
@@ -115,6 +117,9 @@ fun LockpickScreen(
     DisposableEffect(hasSensor) {
         if (!hasSensor) return@DisposableEffect onDispose { }
 
+        // AI-Generated: Signalisiere Bereitschaft sofort beim Laden
+        onReady()
+
         var pitch0 = 0f
         val rotationMatrix = FloatArray(9)
         val orientation = FloatArray(3)
@@ -146,8 +151,8 @@ fun LockpickScreen(
         onDispose { sensorManager.unregisterListener(listener) }
     }
 
-    LaunchedEffect(activePinIndex, allLocked) {
-        if (allLocked) return@LaunchedEffect
+    LaunchedEffect(activePinIndex, allLocked, isGameActive) {
+        if (allLocked || !isGameActive) return@LaunchedEffect
         holdProgress = 0f
         var elapsed = 0L
 
