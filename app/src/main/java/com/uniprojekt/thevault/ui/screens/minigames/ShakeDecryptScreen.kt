@@ -23,7 +23,6 @@ import kotlin.random.Random
  * Jeder Spieler bekommt einen Teil des Tresorcodes, der zu Beginn "verschlüsselt" dargestellt wird.
  * Durch Schütteln des Handys (erkannt über Beschleunigungssensor) steigt der Fortschritt, der nach und nach die echten Ziffern aufdeckt.
  * Je schneller/öfter geschüttelt wird, desto schneller ist der Code vollständig "entschlüsselt".
- * ACHTUNG: Diese Implementierung ist für ein einzelnes Gerät. Eine echte Mehrspielerfunktionalität ist hier noch nicht enthalten.
  */
 
 private const val SHAKE_THRESHOLD = 2.7f
