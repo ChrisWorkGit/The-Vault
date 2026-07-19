@@ -21,6 +21,7 @@ import com.uniprojekt.thevault.data.VaultDatabase
 import com.uniprojekt.thevault.data.VaultRepository
 import com.uniprojekt.thevault.ui.screens.minigames.DecibelBypassScreen
 import com.uniprojekt.thevault.ui.screens.minigames.GyroLockScreen
+import com.uniprojekt.thevault.ui.screens.minigames.LaserBarrierScreen
 import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
 import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
 import com.uniprojekt.thevault.ui.theme.NeonGreen
@@ -116,6 +117,14 @@ fun MainApp(
                             }
                             "GyroLock" -> {
                                 GyroLockScreen(
+                                    onComplete = { viewModel.completeCurrentMinigame() },
+                                    onFail = { viewModel.failCurrentMinigame() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
+                                )
+                            }
+                            "LaserBarrier" -> {
+                                LaserBarrierScreen(
                                     onComplete = { viewModel.completeCurrentMinigame() },
                                     onFail = { viewModel.failCurrentMinigame() },
                                     onReady = { viewModel.reportReadyToStart() },
