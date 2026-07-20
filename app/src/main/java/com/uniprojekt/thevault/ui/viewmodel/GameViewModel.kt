@@ -81,7 +81,7 @@ class GameViewModel : ViewModel() {
     private val activeMinigameSequence = mutableListOf<String>()
     private val readyPlayers = mutableSetOf<String>()
     private val startReadyPlayers = mutableSetOf<String>()
-    private val defaultMinigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick", "GyroLock", "LaserBarrier", "RotationLock")
+    private val defaultMinigames = listOf("DecibelBypass", "ShakeDecrypt", "LockPick", "GyroLock", "LaserBarrier", "RotationLock", "NotificationOverload")
     private var vaultRepository: VaultRepository? = null
 
     private val _archivedStats = MutableStateFlow<List<HeistStat>>(emptyList())
@@ -132,11 +132,11 @@ class GameViewModel : ViewModel() {
         // Keinen sofortigen Wechsel in die Lobby - Host bleibt auf StartScreen bis Client kommt
         val ip = NetworkUtils.getLocalIpv4Address()
         _hostIp.value = ip ?: "IP nicht gefunden"
-        
+
         viewModelScope.launch {
             NetworkManager.startHost(
                 onStatusUpdate = { _networkStatus.value = it },
-                onHandshakeDone = { success -> 
+                onHandshakeDone = { success ->
                     _isConnected.value = success
                 },
                 onMessageReceived = { msg, sender -> handleNetworkMessage(msg, sender) }
@@ -151,7 +151,7 @@ class GameViewModel : ViewModel() {
             NetworkManager.connectToHost(
                 hostIp = ip,
                 onStatusUpdate = { _networkStatus.value = it },
-                onHandshakeDone = { success -> 
+                onHandshakeDone = { success ->
                     _isConnected.value = success
                     if (success) {
                         _gameState.value = GameState.InLobby(listOf(_playerName.value), false)
@@ -259,7 +259,7 @@ class GameViewModel : ViewModel() {
         } else {
             activeMinigameSequence.addAll(defaultMinigames.shuffled())
         }
-        
+
         playedGames.clear()
         playedGames.add(activeMinigameSequence[0])
         _totalErrors.value = 0
@@ -328,7 +328,7 @@ class GameViewModel : ViewModel() {
         if (currentState is GameState.Playing) {
             // Spieler ist lokal fertig, muss aber auf das Team warten
             if (isHost) {
-                handleClientReady(hostReady = true, senderId = "HOST") 
+                handleClientReady(hostReady = true, senderId = "HOST")
             } else {
                 _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
                 NetworkManager.sendMessage("MINIGAME_READY")
@@ -342,7 +342,7 @@ class GameViewModel : ViewModel() {
                 // AI-Generated: Real Device Connection & Sync Patch
                 // Verwende ein Set und eindeutige IDs (IPs), um Duplikate durch Jitter zu verhindern
                 readyPlayers.add(senderId)
-                
+
                 checkAllPlayersReady()
 
                 if (hostReady && readyPlayers.size < _players.value.size) {
@@ -362,7 +362,7 @@ class GameViewModel : ViewModel() {
             // Falls ein Client disconnected ist, wird er oben aus readyPlayers entfernt
             if (readyPlayers.size >= _players.value.size) {
                 readyPlayers.clear()
-                
+
                 // AI-Generated: Real Device Connection & Sync Patch
                 // Kurze Verzögerung einbauen, damit alle Clients Zeit haben, in den 'Waiting'-State zu wechseln
                 viewModelScope.launch {
@@ -381,7 +381,7 @@ class GameViewModel : ViewModel() {
             is GameState.WaitingForTeam -> currentState.nextIndex - 1
             else -> return
         }
-        
+
         val nextIndex = currentIndex + 1
         _isGameActive.value = false
         startReadyPlayers.clear()
@@ -442,7 +442,7 @@ class GameViewModel : ViewModel() {
             val sequence = Regex("\"sequence\":\"(.*?)\"").find(json)?.groupValues?.get(1) ?: ""
             val errors = Regex("\"errors\":(\\d+)").find(json)?.groupValues?.get(1)?.toInt() ?: 0
             val win = Regex("\"win\":(true|false)").find(json)?.groupValues?.get(1)?.toBoolean() ?: false
-            
+
             HeistStat(
                 timestamp = timestamp,
                 players = players,
@@ -518,8 +518,8 @@ class GameViewModel : ViewModel() {
 
     fun openScanner() = viewModelScope.launch { _showScanner.value = true }
     fun closeScanner() = viewModelScope.launch { _showScanner.value = false }
-    fun initRepository(repository: VaultRepository) { 
-        this.vaultRepository = repository 
+    fun initRepository(repository: VaultRepository) {
+        this.vaultRepository = repository
         viewModelScope.launch {
             repository.allHeistStats.collect { _archivedStats.value = it }
         }
