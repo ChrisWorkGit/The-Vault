@@ -136,6 +136,14 @@ fun MainApp(
                                     isGameActive = isGameActive
                                 )
                             }
+                            "RotationLock" -> {
+                                RotationLockScreen(
+                                    onComplete = { viewModel.completeCurrentMinigame() },
+                                    onFail = { viewModel.failCurrentMinigame() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
+                                )
+                            }
                             "NotificationOverload" -> {
                                 // AI-Generated: Immersive Android System Notification Overload Game - UI Binding
                                 NotificationOverloadScreen(
