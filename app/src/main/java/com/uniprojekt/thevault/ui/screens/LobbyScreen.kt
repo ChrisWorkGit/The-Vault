@@ -1,5 +1,6 @@
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 // PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
+// PROMPT-REFERENZ: [REF-FEATURE-APP-LOGO-INTEGRATION]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.ClipData
@@ -40,10 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.uniprojekt.thevault.data.model.PlayerProfile
 import com.uniprojekt.thevault.network.NetworkUtils
+import com.uniprojekt.thevault.ui.components.VaultLogo
 import com.uniprojekt.thevault.ui.theme.*
 
 // AI-Generated: Multiplayer Lobby & Synchronized In-Game Menu
 // AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
+// AI-Generated: Cyberpunk Logo Component & App Launcher Icon
 
 /**
  * Lobby-Bildschirm für den Heist. Zeigt verbundene Agenten und ermöglicht dem Host den Start.
@@ -66,6 +69,12 @@ fun LobbyScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // AI-Generated: Cyberpunk Logo Component & App Launcher Icon
+        VaultLogo(
+            showText = false,
+            modifier = Modifier.size(80.dp).padding(bottom = 16.dp)
+        )
+
         Text(
             text = "ACCESSING VAULT LOBBY",
             style = cyberpunkGlowStyle(NeonGreen),

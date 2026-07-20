@@ -1,5 +1,6 @@
 // PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
 // PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
+// PROMPT-REFERENZ: [REF-FEATURE-APP-LOGO-INTEGRATION]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.Context
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.uniprojekt.thevault.data.model.HeistStat
+import com.uniprojekt.thevault.ui.components.VaultLogo
 import com.uniprojekt.thevault.ui.theme.*
 import java.io.File
 import java.io.FileOutputStream
@@ -45,6 +47,7 @@ import kotlin.math.roundToInt
  * Ermöglicht das Teilen von Erfolgen und das Einsehen alter Stats.
  */
 // AI-Generated: Room Database Statistics & Shareable Highscore Screen
+// AI-Generated: Cyberpunk Logo Component & App Launcher Icon
 @Composable
 fun HighscoreScreen(
     stat: HeistStat?,
@@ -112,15 +115,12 @@ fun HighscoreScreen(
                         },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // AI-Generated: Custom Screenshot Header Logo
-                    Text(
-                        text = "THE VAULT",
-                        color = NeonGreen,
-                        style = cyberpunkGlowStyle(NeonGreen),
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        modifier = Modifier.padding(bottom = 16.dp).background(Color.Black.copy(alpha = 0.8f))
+                    // AI-Generated: Cyberpunk Logo Component & App Launcher Icon
+                    VaultLogo(
+                        showText = true,
+                        modifier = Modifier
+                            .padding(bottom = 24.dp)
+                            .background(Color.Black.copy(alpha = 0.8f))
                     )
                     
                     StatCard(stat)
@@ -263,10 +263,20 @@ fun ArchiveScreen(
             .padding(16.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Zurück", tint = NeonGreen)
                 }
+                
+                // AI-Generated: Cyberpunk Logo Component & App Launcher Icon
+                VaultLogo(
+                    showText = false,
+                    modifier = Modifier.size(40.dp).padding(end = 12.dp)
+                )
+
                 Text(
                     text = "BREACH LOGS",
                     color = NeonGreen,

@@ -5,6 +5,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 // PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
 // PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
+// PROMPT-REFERENZ: [REF-FEATURE-APP-LOGO-INTEGRATION]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.ClipData
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uniprojekt.thevault.network.NetworkUtils
+import com.uniprojekt.thevault.ui.components.VaultLogo
 import com.uniprojekt.thevault.ui.theme.*
 import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 
@@ -42,6 +44,7 @@ import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 // AI-Generated: QR-Code P2P Onboarding Layer with Manual Fallback
 // AI-Generated: Cyberpunk Design System & Neon UI Layer
 // AI-Generated: Room Database Statistics & Shareable Highscore Screen
+// AI-Generated: Cyberpunk Logo Component & App Launcher Icon
 
 /**
  * Der Startbildschirm (Lobby) von "The Vault" im Cyberpunk-Look.
@@ -84,21 +87,13 @@ fun StartScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Titel mit Neon Glow
-                Text(
-                    text = "THE VAULT",
-                    style = MaterialTheme.typography.displayLarge.merge(cyberpunkGlowStyle(NeonGreen)),
-                    color = NeonGreen
+                // AI-Generated: Cyberpunk Logo Component & App Launcher Icon
+                VaultLogo(
+                    modifier = Modifier.padding(bottom = 32.dp),
+                    showText = true
                 )
                 
-                Text(
-                    text = "P2P MULTIPLAYER :: SECURE_LINK",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextGreen,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Netzwerk-Status Anzeige (Terminal-Look)
                 Box(
