@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "TheVault"
 include(":app")
+include(":wear")

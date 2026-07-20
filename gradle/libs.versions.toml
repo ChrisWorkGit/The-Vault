@@ -13,6 +13,9 @@ camerax = "1.4.0"
 mlkitBarcodeScanning = "17.3.0"
 room = "2.8.4"
 ksp = "2.2.10-2.0.2"
+playServicesWearable = "20.0.1"
+wearCompose = "1.6.2"
+wear = "1.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,7 +44,11 @@ mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning"
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-
+play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
+androidx-wear-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "wearCompose" }
+androidx-wear-compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "wearCompose" }
+androidx-wear-compose-navigation = { group = "androidx.wear.compose", name = "compose-navigation", version.ref = "wearCompose" }
+androidx-wear = { group = "androidx.wear", name = "wear", version.ref = "wear" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

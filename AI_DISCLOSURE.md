@@ -545,3 +545,32 @@ Das Team korrigierte den Ressourcen-Linking-Fehler, bei dem Hex-Codes direkt im 
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Identifikation der Race-Conditions beim Testen mit mehreren Emulatoren/Geräten. Das Team definierte die Anforderung für das Loopback-Routing, um die Code-Komplexität im ViewModel zu reduzieren. Nach der Generierung wurde die Verzögerung von 400ms für physische Geräte validiert und die Integration der Relay-Informationen in den zentralen Warten-Screen vorgenommen, um die Spielbarkeit von "Notification Overload" zu erhalten.
+
+### 🔹 Referenz: [REF-FEATURE-WEAR-OS-COMPANION]
+* **Datum:** 20.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+    * `app/build.gradle.kts`
+    * `gradle/libs.versions.toml`
+    * `settings.gradle.kts`
+    * `wear/build.gradle.kts`
+    * `wear/src/main/AndroidManifest.xml`
+    * `wear/src/main/java/com/uniprojekt/thevault/wear/WearMainActivity.kt`
+    * `wear/src/main/java/com/uniprojekt/thevault/wear/VaultWearableListenerService.kt`
+    * `wear/src/main/java/com/uniprojekt/thevault/wear/ui/screens/WearMainScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/wear/WearSyncManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/wear/VaultMobileWearableListenerService.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+* **Inhalt/Ziel:** Implementierung einer Wear OS Companion App als Cyberpunk-Wrist-Terminal. Realisierung der Echtzeit-Synchronisation (Timer, Status) via Data Layer API und eines Debug-Terminals für die Smartwatch.
+
+#### Verwendeter Prompt:
+> Richte die Wear OS Anbindung ein, erstelle ein 'WearableListenerService' und baue das Smartwatch-UI mit Compose for Wear OS.
+> 1. Data Layer API Sync: Sende Timer, Fehler und Status vom Handy zur Uhr via PutDataMapRequest.
+> 2. Wear UI: Cyberpunk-Look (NeonGreen/CyberBlack). Hauptansicht zeigt Missionsdaten nur bei aktivem Spiel, sonst Standby-Modus ("UPLINK: ONLINE").
+> 3. Debug-Terminal: Swipe nach rechts öffnet Terminal. In DEBUG-Builds können Buttons "BYPASS NODE" und "ALARM TEST" Signale zurück ans Handy senden.
+> 4. Mobile Integration: Zeige in der Handy-App ein Status-Icon [WEAR_LINK: OK] an, wenn eine Uhr verbunden ist.
+> 5. Fixes: Zentriere das Hintergrund-Logo [ VAULT ] auf der Uhr stabil und fixiere die Rendering-Position.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Das Team definierte die "Capability"-Strategie (`the_vault_wear_app`), um eine zuverlässige Erkennung der aktiven Watch-App zu ermöglichen. Nach der Generierung wurden die runden Display-Constraints optimiert und die Standby-Logik verfeinert, damit die Uhr im Alltag nicht ablenkt. Zudem wurden die Icons (Adaptive Icons für Wear) und die P2P-Befehlsstruktur für das Debug-Menü manuell an die bestehende State Machine angepasst.
