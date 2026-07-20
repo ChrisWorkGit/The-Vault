@@ -100,7 +100,7 @@ fun StatusPage() {
             if (isGameActive) {
                 // MISSION AKTIV: Zeige Timer und Stats
                 Text(
-                    text = "TIME: $timer",
+                    text = "ELAPSED: $timer",
                     color = NeonGreen,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
