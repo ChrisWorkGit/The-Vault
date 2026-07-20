@@ -23,6 +23,7 @@ import com.uniprojekt.thevault.ui.screens.minigames.DecibelBypassScreen
 import com.uniprojekt.thevault.ui.screens.minigames.GyroLockScreen
 import com.uniprojekt.thevault.ui.screens.minigames.LaserBarrierScreen
 import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
+import com.uniprojekt.thevault.ui.screens.minigames.RotationLockScreen
 import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
 import com.uniprojekt.thevault.ui.theme.NeonGreen
 import com.uniprojekt.thevault.ui.theme.crtOverlay
@@ -125,6 +126,14 @@ fun MainApp(
                             }
                             "LaserBarrier" -> {
                                 LaserBarrierScreen(
+                                    onComplete = { viewModel.completeCurrentMinigame() },
+                                    onFail = { viewModel.failCurrentMinigame() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
+                                )
+                            }
+                            "RotationLock" -> {
+                                RotationLockScreen(
                                     onComplete = { viewModel.completeCurrentMinigame() },
                                     onFail = { viewModel.failCurrentMinigame() },
                                     onReady = { viewModel.reportReadyToStart() },
