@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
+// PROMPT-REFERENZ: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.Manifest
@@ -12,8 +13,6 @@ import android.content.IntentFilter
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -128,57 +127,6 @@ fun NotificationOverloadScreen(
             TargetNodeUI(hasPermission, notificationManager, content ?: "", isCompleted, onFail)
         } else {
             AnalystUI(content ?: "SCANNING FOR UPLINK...", isCompleted)
-        }
-
-        // Overlay wenn fertig, aber Team noch braucht
-        AnimatedVisibility(visible = isCompleted, enter = fadeIn()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.85f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        text = "UPLINK ESTABLISHED",
-                        color = NeonGreen,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.neonGlow()
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                    
-                    // Zeige weiterhin die benötigten Daten für den Partner an!
-                    if (role == "NEURAL_RELAY" && content != null) {
-                        val parts = content.split("|")
-                        if (parts.size >= 3) {
-                            Text(text = "STILL BROADCASTING TO PARTNER:", color = TextGreen, fontSize = 12.sp)
-                            Text(
-                                text = "AGENT ${parts[1]} NEEDS:",
-                                color = Color.White,
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "#${parts[2]}",
-                                color = NeonGreen,
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.neonGlow()
-                            )
-                            Spacer(modifier = Modifier.height(32.dp))
-                        }
-                    }
-
-                    Text(
-                        text = "WAITING FOR OTHER AGENTS...",
-                        color = TextGreen,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
         }
     }
 }
