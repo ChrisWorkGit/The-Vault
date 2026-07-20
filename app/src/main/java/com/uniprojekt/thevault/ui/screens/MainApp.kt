@@ -2,6 +2,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
 // PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
+// PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.background
@@ -20,12 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uniprojekt.thevault.data.VaultDatabase
 import com.uniprojekt.thevault.data.VaultRepository
-import com.uniprojekt.thevault.ui.screens.minigames.DecibelBypassScreen
-import com.uniprojekt.thevault.ui.screens.minigames.GyroLockScreen
-import com.uniprojekt.thevault.ui.screens.minigames.LaserBarrierScreen
-import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
-import com.uniprojekt.thevault.ui.screens.minigames.NotificationOverloadScreen
-import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
+import com.uniprojekt.thevault.ui.screens.minigames.*
 import com.uniprojekt.thevault.ui.theme.NeonGreen
 import com.uniprojekt.thevault.ui.theme.crtOverlay
 import com.uniprojekt.thevault.ui.theme.cyberpunkGlowStyle
@@ -35,6 +31,7 @@ import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
 // AI-Generated: Cyberpunk In-Game Menu & Conditional Debug Overlay
 // AI-Generated: Multiplayer Lobby & Synchronized In-Game Menu
 // AI-Generated: Room Database Statistics & Shareable Highscore Screen
+// AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
 
 /**
  * Die zentrale App-Komponente, die den GameState ausliest und zwischen den Screens navigiert.
@@ -46,15 +43,21 @@ fun MainApp(
 ) {
     val context = LocalContext.current
     
-    // AI-Generated: Initialize Repository for Room Persistence
+    // AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
     LaunchedEffect(Unit) {
         val database = VaultDatabase.getDatabase(context)
-        val repository = VaultRepository(database.vaultDao(), database.heistStatDao())
+        val repository = VaultRepository(
+            database.vaultDao(),
+            database.heistStatDao(),
+            database.playerProfileDao()
+        )
         viewModel.initRepository(repository)
     }
 
     val gameState by viewModel.gameState.collectAsState()
-    val playerName by viewModel.playerName.collectAsState()
+    val localPlayer by viewModel.localPlayer.collectAsState()
+    val playerName = localPlayer.name
+    val players by viewModel.players.collectAsState()
     val hostIp by viewModel.hostIp.collectAsState()
     val timerSeconds by viewModel.timerSeconds.collectAsState()
     val isGameActive by viewModel.isGameActive.collectAsState()
@@ -77,7 +80,7 @@ fun MainApp(
             }
             is GameViewModel.GameState.InLobby -> {
                 LobbyScreen(
-                    players = state.players,
+                    players = players,
                     isHost = state.isHost,
                     currentPlayerName = playerName,
                     hostIp = hostIp,
