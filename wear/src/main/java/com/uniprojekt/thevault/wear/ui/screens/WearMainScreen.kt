@@ -79,7 +79,7 @@ fun StatusPage() {
     ) {
         // AI-Generated: Fix Background Logo Rendering (Zentrierung & Skalierung)
         Text(
-            text = "[ VAULT ]",
+            text = "VAULT",
             color = NeonGreen,
             modifier = Modifier
                 .alpha(alpha)
