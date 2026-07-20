@@ -3,8 +3,10 @@
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
 // PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
 // PROMPT-REFERENZ: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
+// PROMPT-REFERENZ: [REF-FEATURE-WEAR-OS-COMPANION]
 package com.uniprojekt.thevault.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uniprojekt.thevault.data.VaultRepository
@@ -14,11 +16,14 @@ import com.uniprojekt.thevault.data.model.MinigameResult
 import com.uniprojekt.thevault.data.model.PlayerProfile
 import com.uniprojekt.thevault.network.NetworkManager
 import com.uniprojekt.thevault.network.NetworkUtils
+import com.uniprojekt.thevault.wear.WearDebugSignalHandler
+import com.uniprojekt.thevault.wear.WearSyncManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -81,6 +86,8 @@ class GameViewModel : ViewModel() {
 
     private val _totalErrors = MutableStateFlow(0)
     val totalErrors: StateFlow<Int> = _totalErrors.asStateFlow()
+
+    val isWatchConnected = WearSyncManager.isWatchConnected
 
     private val playedGames = mutableListOf<String>()
 
@@ -676,6 +683,37 @@ class GameViewModel : ViewModel() {
 
     fun openScanner() = viewModelScope.launch { _showScanner.value = true }
     fun closeScanner() = viewModelScope.launch { _showScanner.value = false }
+
+    /**
+     * Initialisiert die Synchronisation mit der Wear OS App.
+     * // AI-Generated: Wear OS Companion App & Wrist Debug Terminal
+     */
+    fun startWearSync(context: Context) {
+        WearSyncManager.startMonitoring(context)
+        viewModelScope.launch {
+            combine(_timerSeconds, _gameState, _totalErrors, _isGameActive) { timer, state, errors, active ->
+                val statusText = when (state) {
+                    is GameState.Playing -> "ACTIVE: ${state.name}"
+                    is GameState.Lobby, is GameState.InLobby -> "IN LOBBY"
+                    is GameState.GameOver -> if (state.isWin) "SUCCESS" else "FAILED"
+                    is GameState.WaitingForTeam -> "WAITING"
+                    else -> "IDLE"
+                }
+                val mistakesText = "$errors/3"
+                val timeText = formatTime(timer)
+                
+                WearSyncManager.syncGameState(context.applicationContext, timeText, statusText, mistakesText, active)
+            }.collect {}
+        }
+
+        WearDebugSignalHandler.setListener { command ->
+            when (command) {
+                "BYPASS_NODE" -> debugCompleteForTeam()
+                "ALARM_TEST" -> addError()
+            }
+        }
+    }
+
     fun initRepository(repository: VaultRepository) {
         this.vaultRepository = repository
         viewModelScope.launch {

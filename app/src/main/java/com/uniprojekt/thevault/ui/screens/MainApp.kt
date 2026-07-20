@@ -7,9 +7,11 @@
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +57,7 @@ fun MainApp(
             database.playerProfileDao()
         )
         viewModel.initRepository(repository)
+        viewModel.startWearSync(context)
     }
 
     val gameState by viewModel.gameState.collectAsState()
@@ -65,9 +68,11 @@ fun MainApp(
     val timerSeconds by viewModel.timerSeconds.collectAsState()
     val isGameActive by viewModel.isGameActive.collectAsState()
     val archivedStats by viewModel.archivedStats.collectAsState()
+    val isWatchConnected by viewModel.isWatchConnected.collectAsState()
 
     Surface(modifier = Modifier.padding(paddingValues)) {
-        when (val state = gameState) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (val state = gameState) {
             is GameViewModel.GameState.StartScreen -> {
                 StartScreen(
                     onStartGame = { viewModel.startHosting() }
@@ -276,5 +281,35 @@ fun MainApp(
             }
             else -> {}
         }
+
+        // AI-Generated: Cyberpunk Wear OS Status Indicator
+        if (isWatchConnected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .border(1.dp, NeonGreen.copy(alpha = 0.5f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Watch,
+                        contentDescription = null,
+                        tint = NeonGreen,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "WEAR_LINK: OK",
+                        color = NeonGreen,
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
+}
 }
