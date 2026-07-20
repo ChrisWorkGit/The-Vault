@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PROMPT-REFERENZ: [REF-FEATURE-APP-LOGO-INTEGRATION] -->
+<!-- AI-Generated: Cyberpunk Logo Component & App Launcher Icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Gitternetz-Hintergrund (DarkGreen) -->
+    <path
+        android:strokeColor="#003311"
+        android:strokeWidth="0.5"
+        android:pathData="M0,27h108 M0,54h108 M0,81h108 M27,0v108 M54,0v108 M81,0v108" />
+
+    <!-- Fadenkreuz-Ecken (Neon-Green) -->
+    <path
+        android:strokeColor="#00FF66"
+        android:strokeWidth="2"
+        android:pathData="M20,35V20H35 M73,20H88V35 M20,73V88H35 M73,88H88V73" />
+
+    <!-- Zentrales "V"-Emblem (Neon-Green) -->
+    <path
+        android:fillColor="#00FF66"
+        android:pathData="M35,38L54,72L73,38H63L54,55L45,38Z" />
+
+</vector>

@@ -477,3 +477,50 @@ Das Team konzipierte die Erweiterung zum "Neural Relay"-System, bei dem jeder Sp
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Das Team identifizierte die zirkuläre Abhängigkeit in der Compose-UI, bei der jeder Tastendruck einen globalen State-Update und damit eine Recomposition des Textfeldes auslöste (Fokus-Verlust). Als Lösung konzipierte das Team den "Buffered Edit"-Workflow im `LobbyScreen`: Namensänderungen werden nun lokal in einem Zwischenspeicher gehalten und erst bei expliziter Bestätigung (Häkchen-Icon oder ImeAction.Done) an das Netzwerk und die Datenbank übertragen. Zudem entschied sich das Team für die Einführung einer separaten `PlayerProfile`-Tabelle, um die Profil-Historie sauber von den transienten `HeistStat`-Agentenlisten zu trennen.
+
+### 🔹 Referenz: [REF-FEATURE-APP-LOGO-INTEGRATION]
+* **Datum:** 20.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+    * `app/src/main/res/values/colors.xml`
+    * `app/src/main/res/drawable/ic_vault_logo.xml`
+    * `app/src/main/res/drawable/ic_vault_logo_foreground.xml`
+    * `app/src/main/res/mipmap-anydpi/ic_launcher.xml`
+    * `app/src/main/res/mipmap-anydpi/ic_launcher_round.xml`
+    * `app/src/main/AndroidManifest.xml`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/CyberpunkUI.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/components/VaultLogo.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/StartScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/LobbyScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/GameOverScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/HighscoreScreen.kt`
+* **Inhalt/Ziel:** Integration des offiziellen "The Vault" Cyberpunk-Logos als Adaptive App Icon und wiederverwendbare Jetpack Compose Komponente mit Neon-Glow-Effekt.
+
+#### Verwendeter Prompt:
+> Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+> Die neue Referenz-ID für diese Aufgabe lautet: [REF-FEATURE-APP-LOGO-INTEGRATION]
+> 
+> KONTEXT:
+> Wir wollen das offizielle "The Vault" Cyberpunk Logo in das Projekt integrieren. Das Logo soll sowohl als Android App Icon (Launcher Icon) als auch als wiederverwendbares Jetpack Compose Composable für Splash-Screens, Header und In-App-Menüs verfügbar sein.
+> 
+> AUFGABE:
+> Binde das "The Vault" Cyberpunk-Logo im Projekt ein.
+> 
+> Bitte setze folgende Schritte um:
+> 1. Launcher Icon (Vector Drawable):
+>    - Erstelle bzw. aktualisiere die Datei `app/src/main/res/drawable/ic_vault_logo.xml` mit dem Vektor-Code für das Logo (Background `#040805`, Neon-Green `#00FF66`, Dark-Green `#003311`, Fadenkreuz-Ecken und zentrales "V"-Emblem).
+>    - Passe das AndroidManifest (`AndroidManifest.xml`) und die Launcher-Icons (`mipmap`) an, sodass `ic_vault_logo` als Standard-App-Icon verwendet wird.
+> 2. Compose-Komponente (`VaultLogo.kt`):
+>    - Erstelle das Composable `VaultLogo` im Paket `com.uniprojekt.thevault.ui.components`.
+>    - Nutze die vorgegebenen Farben (CyberBlack `#040805`, NeonGreen `#00FF66`, TextGreen `#00AA44`, DarkGreen `#003311`).
+>    - Verpasse dem Logo einen dezent pulsierenden Neon-Glow-Effekt auf den Neon-Grün-Elementen.
+>    - Binde den schrägen `CyberpunkCutShape` sowie das Viewfinder-Grid ein.
+>    - Mach den Text ("THE VAULT // SYSTEM_LOCKED") über einen Parameter `showText: Boolean = true` optional schaltbar.
+> 3. Einbindung im Splash / Start-Screen:
+>    - Platziere die neue `VaultLogo`-Komponente im Start-Screen (`MainMenuView` / `HomeScreen`), um dem Hauptmenü den passenden Cyberpunk-Look zu verleihen.
+> 
+> [ZUSATZ]: Android resource linking failed. '#040805' is incompatible with attribute drawable. Tausche es auch auf der Log seite aus also auch beim screenshot bei der überischt ob man das psile geschafft hat.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Das Team korrigierte den Ressourcen-Linking-Fehler, bei dem Hex-Codes direkt im adaptiven Icon-Hintergrund verwendet wurden, durch die Definition globaler Farbressourcen in `colors.xml`. Zudem optimierte das Team das App-Icon für Android 8.0+ durch die Aufteilung in Vordergrund (`ic_vault_logo_foreground`) und Hintergrund (`cyber_black`), um Parallax-Effekte zu ermöglichen. Die Integration wurde über den Startbildschirm hinaus auf die Lobby-, Highscore- (für Screenshots) und Archiv-Ansichten ausgeweitet, um ein konsistentes Branding sicherzustellen.
+

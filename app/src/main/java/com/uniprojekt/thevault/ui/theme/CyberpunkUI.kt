@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE20-CYBERPUNK-THEME]
+// PROMPT-REFERENZ: [REF-FEATURE-APP-LOGO-INTEGRATION]
 package com.uniprojekt.thevault.ui.theme
 
 import androidx.compose.ui.Modifier
@@ -12,6 +13,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 // AI-Generated: Cyberpunk Design System & Neon UI Layer
+// AI-Generated: Cyberpunk Logo Component & App Launcher Icon
 
 /**
  * Eine schräge Parallelogramm-Form für Buttons im Cyberpunk-Stil.
@@ -33,6 +35,30 @@ class CyberpunkShape(private val skewWidth: Float = 40f) : Shape {
         return Outline.Generic(path)
     }
 }
+
+/**
+ * Eine Form mit abgeschnittenen Ecken für Container im Cyberpunk-Stil.
+ * @param cornerSize Die Größe der abgeschnittenen Ecken in Pixeln.
+ */
+class CyberpunkCutShape(private val cornerSize: Float = 30f) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val path = Path().apply {
+            moveTo(cornerSize, 0f)
+            lineTo(size.width, 0f)
+            lineTo(size.width, size.height - cornerSize)
+            lineTo(size.width - cornerSize, size.height)
+            lineTo(0f, size.height)
+            lineTo(0f, cornerSize)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
 
 /**
  * Erzeugt einen leuchtenden Text-Stil (Neon Glow).
