@@ -1,6 +1,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 // PROMPT-REFERENZ: [REF-ISSUE03-ROOM-SETUP]
 // PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
+// PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.background
@@ -24,6 +25,7 @@ import com.uniprojekt.thevault.ui.screens.minigames.GyroLockScreen
 import com.uniprojekt.thevault.ui.screens.minigames.LaserBarrierScreen
 import com.uniprojekt.thevault.ui.screens.minigames.LockpickScreen
 import com.uniprojekt.thevault.ui.screens.minigames.RotationLockScreen
+import com.uniprojekt.thevault.ui.screens.minigames.NotificationOverloadScreen
 import com.uniprojekt.thevault.ui.screens.minigames.ShakeDecryptScreen
 import com.uniprojekt.thevault.ui.theme.NeonGreen
 import com.uniprojekt.thevault.ui.theme.crtOverlay
@@ -138,6 +140,15 @@ fun MainApp(
                                     onFail = { viewModel.failCurrentMinigame() },
                                     onReady = { viewModel.reportReadyToStart() },
                                     isGameActive = isGameActive
+                            "NotificationOverload" -> {
+                                // AI-Generated: Immersive Android System Notification Overload Game - UI Binding
+                                NotificationOverloadScreen(
+                                    role = viewModel.notificationRole.collectAsState().value,
+                                    content = viewModel.notificationContent.collectAsState().value,
+                                    isCompleted = state.isCompleted,
+                                    onSuccess = { viewModel.completeCurrentMinigame() },
+                                    onFail = { viewModel.failCurrentMinigame() },
+                                    onMistake = { viewModel.addError() }
                                 )
                             }
                             else -> {

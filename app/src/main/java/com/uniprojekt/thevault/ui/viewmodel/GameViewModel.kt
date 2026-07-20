@@ -1,5 +1,6 @@
 // PROMPT-REFERENZ: [REF-FIX-RANDOM-MINIGAME]
 // PROMPT-REFERENZ: [REF-ISSUE30-REAL-DEVICE-FIX]
+// PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -39,7 +40,7 @@ class GameViewModel : ViewModel() {
         object StartScreen : GameState
         object Archive : GameState
         data class InLobby(val players: List<String>, val isHost: Boolean) : GameState
-        data class Playing(val index: Int, val name: String) : GameState
+        data class Playing(val index: Int, val name: String, val isCompleted: Boolean = false) : GameState
         data class WaitingForTeam(val nextIndex: Int) : GameState
         data class GameOver(val isWin: Boolean, val reason: String? = null, val stat: HeistStat? = null) : GameState
     }
@@ -77,6 +78,13 @@ class GameViewModel : ViewModel() {
 
     private val playedGames = mutableListOf<String>()
 
+    // AI-Generated: [REF-ISSUE27-NOTIFICATION-OVERLOAD] - Game state for role distribution
+    private val _notificationRole = MutableStateFlow<String?>(null)
+    val notificationRole: StateFlow<String?> = _notificationRole.asStateFlow()
+
+    private val _notificationContent = MutableStateFlow<String?>(null)
+    val notificationContent: StateFlow<String?> = _notificationContent.asStateFlow()
+
     // AI-Generated: Dynamic Minigame Sequence handling
     private val activeMinigameSequence = mutableListOf<String>()
     private val readyPlayers = mutableSetOf<String>()
@@ -86,6 +94,100 @@ class GameViewModel : ViewModel() {
 
     private val _archivedStats = MutableStateFlow<List<HeistStat>>(emptyList())
     val archivedStats: StateFlow<List<HeistStat>> = _archivedStats.asStateFlow()
+
+    // AI-Generated: Immersive Android System Notification Overload Game
+    /**
+     * Wählt zufällig einen Target Node und generiert den Golden Key.
+     * V2: Jeder Spieler bekommt eine Aufgabe und muss einem anderen helfen.
+     */
+    private fun setupNotificationOverload() {
+        if (!isHost) return
+        val allPlayers = _players.value
+        val n = allPlayers.size
+        if (n == 0) return
+
+        if (n == 1) {
+            // Fallback für Single Player (Debug)
+            val targetPlayer = allPlayers[0]
+            val goldenKey = (1000..9999).random().toString()
+            NetworkManager.sendMessage("NOTIF_SETUP:$targetPlayer|$goldenKey")
+            handleNotificationSetup(targetPlayer, goldenKey)
+            return
+        }
+
+        // Erzeuge für jeden Spieler einen Key, den er finden muss
+        val keys = List(n) { (1000..9999).random().toString() }
+        
+        // Wir bauen eine Zuweisung:
+        // Spieler[i] muss keys[i] finden.
+        // Spieler[(i+1)%n] bekommt die Info über keys[i].
+        // Format: NAME:MY_KEY:AGENT_TO_HELP:KEY_FOR_THEM
+        val assignments = allPlayers.mapIndexed { i, name ->
+            val myKey = keys[i]
+            val prevIndex = if (i == 0) n - 1 else i - 1
+            val nextIndex = (i + 1) % n
+            
+            val agentToHelp = allPlayers[nextIndex]
+            val keyToTellThem = keys[nextIndex]
+            "$name:$myKey:$agentToHelp:$keyToTellThem"
+        }.joinToString("|")
+
+        NetworkManager.sendMessage("NOTIF_SETUP_V2:$assignments")
+        handleNotificationSetupV2(assignments)
+    }
+
+    /**
+     * Bestimmt lokal die Rolle (Target vs Analyst) und den anzuzeigenden Inhalt.
+     */
+    private fun handleNotificationSetup(targetPlayer: String, goldenKey: String) {
+        val myName = _playerName.value
+        val allPlayers = _players.value
+        val isTarget = myName == targetPlayer
+
+        _notificationRole.value = if (isTarget) "TARGET" else "ANALYST"
+
+        if (isTarget) {
+            // Der Target Node muss den Golden Key in seinen Notifications finden
+            _notificationContent.value = goldenKey
+        } else {
+            // Analysten erhalten Teil-Informationen zur Kommunikation
+            val analysts = allPlayers.filter { it != targetPlayer }
+            val myAnalystIndex = analysts.indexOf(myName)
+
+            if (analysts.size <= 1) {
+                // Bei nur einem Analysten: Vollständiger Code
+                _notificationContent.value = "TARGET ID: #$goldenKey"
+            } else {
+                // Bei mehreren Analysten: Info-Splitting erzwingt Kommunikation
+                when (myAnalystIndex) {
+                    0 -> _notificationContent.value = "SECTOR: #${goldenKey.take(2)}XX"
+                    1 -> _notificationContent.value = "CODE ENDS WITH: ...${goldenKey.drop(2)}"
+                    else -> _notificationContent.value = "PRIORITY: CRITICAL SECURITY BREACH"
+                }
+            }
+        }
+    }
+
+    // AI-Generated: Immersive Android System Notification Overload Game - V2 Multi-Target Logic
+    /**
+     * Setup für V2: Jeder ist Target, jeder ist Analyst.
+     * Assignments-Format: "NAME:MY_KEY:TARGET_NAME:TARGET_KEY|..."
+     */
+    private fun handleNotificationSetupV2(assignments: String) {
+        val myName = _playerName.value
+        val myEntry = assignments.split("|").find { it.startsWith("$myName:") } ?: return
+        
+        // Format: NAME : MY_KEY : TARGET_NAME : TARGET_KEY
+        val parts = myEntry.split(":")
+        if (parts.size < 4) return
+        
+        val myKeyToFind = parts[1]
+        val agentToHelp = parts[2]
+        val keyToTellAgent = parts[3]
+        
+        _notificationRole.value = "NEURAL_RELAY"
+        _notificationContent.value = "$myKeyToFind|$agentToHelp|$keyToTellAgent"
+    }
 
     fun updatePlayerName(newName: String) {
         _playerName.value = newName
@@ -239,6 +341,16 @@ class GameViewModel : ViewModel() {
                     triggerGameOver(isWin = false, reason = "VERBINDUNG VERLOREN")
                 }
             }
+            message.startsWith("NOTIF_SETUP:") -> {
+                val parts = message.substringAfter("NOTIF_SETUP:").split("|")
+                if (parts.size >= 2) {
+                    handleNotificationSetup(parts[0], parts[1])
+                }
+            }
+            message.startsWith("NOTIF_SETUP_V2:") -> {
+                val assignments = message.substringAfter("NOTIF_SETUP_V2:")
+                handleNotificationSetupV2(assignments)
+            }
         }
     }
 
@@ -268,6 +380,12 @@ class GameViewModel : ViewModel() {
         readyPlayers.clear()
         startReadyPlayers.clear()
         _gameState.value = GameState.Playing(0, activeMinigameSequence[0])
+        
+        // AI-Generated: Immersive Android System Notification Overload Game - Setup trigger
+        if (isHost && activeMinigameSequence[0] == "NotificationOverload") {
+            setupNotificationOverload()
+        }
+
         startTimer()
     }
 
@@ -326,11 +444,12 @@ class GameViewModel : ViewModel() {
     fun completeCurrentMinigame() {
         val currentState = _gameState.value
         if (currentState is GameState.Playing) {
-            // Spieler ist lokal fertig, muss aber auf das Team warten
+            // Spieler ist lokal fertig
+            _gameState.value = currentState.copy(isCompleted = true)
+
             if (isHost) {
                 handleClientReady(hostReady = true, senderId = "HOST")
             } else {
-                _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
                 NetworkManager.sendMessage("MINIGAME_READY")
             }
         }
@@ -339,17 +458,14 @@ class GameViewModel : ViewModel() {
     private fun handleClientReady(hostReady: Boolean, senderId: String) {
         if (isHost) {
             synchronized(readyPlayers) {
-                // AI-Generated: Real Device Connection & Sync Patch
-                // Verwende ein Set und eindeutige IDs (IPs), um Duplikate durch Jitter zu verhindern
                 readyPlayers.add(senderId)
-
                 checkAllPlayersReady()
-
-                if (hostReady && readyPlayers.size < _players.value.size) {
-                    // Host ist fertig, aber wartet noch auf andere
+                
+                // Host State aktualisieren wenn er selbst fertig ist
+                if (hostReady) {
                     val currentState = _gameState.value
                     if (currentState is GameState.Playing) {
-                        _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
+                        _gameState.value = currentState.copy(isCompleted = true)
                     }
                 }
             }
@@ -387,8 +503,15 @@ class GameViewModel : ViewModel() {
         startReadyPlayers.clear()
 
         if (nextIndex < activeMinigameSequence.size) {
-            playedGames.add(activeMinigameSequence[nextIndex])
-            _gameState.value = GameState.Playing(nextIndex, activeMinigameSequence[nextIndex])
+            val nextGame = activeMinigameSequence[nextIndex]
+            playedGames.add(nextGame)
+
+            // AI-Generated: Immersive Android System Notification Overload Game - Setup trigger
+            if (isHost && nextGame == "NotificationOverload") {
+                setupNotificationOverload()
+            }
+
+            _gameState.value = GameState.Playing(nextIndex, nextGame)
         } else {
             finishHeist(isWin = true)
         }
