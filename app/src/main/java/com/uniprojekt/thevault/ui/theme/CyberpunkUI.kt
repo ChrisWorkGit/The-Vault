@@ -81,3 +81,15 @@ fun Modifier.crtOverlay(): Modifier = this.then(
         }
     }
 )
+
+/**
+ * Ein Modifier, der einen Neon-Leuchteffekt hinzufügt.
+ */
+fun Modifier.neonGlow(color: Color = NeonGreen, radius: Float = 20f): Modifier = this.then(
+    Modifier.drawBehind {
+        val paint = Paint().asFrameworkPaint().apply {
+            setShadowLayer(radius, 0f, 0f, color.toArgb())
+        }
+        drawContext.canvas.nativeCanvas.drawRect(0f, 0f, size.width, size.height, paint)
+    }
+)

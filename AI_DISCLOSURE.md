@@ -386,3 +386,54 @@ DENK AN DIE ENTWICKLUNGS-RICHTLINIEN AUS DER AI_RULES.txt:
 - Schreibe deutsche Kommentare, die das Set-basierte Tracking und die Paket-Verzögerung für den Präsentationstermin erklären.
 Erbrachte Eigenleistung des Teams nach Generierung:
 Analyse der Netzwerk-Logs auf physischen Testgeräten zur Identifikation des Synchronisations-Lochs (Signalverlust bei schnellen Zustandswechseln). Das Team entschied sich für einen deterministischen Ansatz: Die Umstellung von einer Liste auf ein Set im readyPlayers-Tracking stellt sicher, dass das System idempotent gegenüber Paket-Duplikaten ist. Zudem wurde die senderId-Logik in den NetworkManager integriert, um eine eindeutige Zuordnung der Readiness-Signale ohne zusätzlichen Protokoll-Overhead zu ermöglichen. Durch das manuelle Einfügen eines 400ms-Delays wurde die Hardware-Latenz physischer Displays erfolgreich ausgeglichen.
+
+### 🔹 Referenz: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
+* **Datum:** 20.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+    * `app/src/main/AndroidManifest.xml`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/NotificationOverloadScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/CyberpunkUI.kt`
+* **Inhalt/Ziel:** Implementierung des immersiven Minispiels "Notification Overload" unter Nutzung echter Android-Systembenachrichtigungen, inkl. dynamischer Rollenverteilung ("Neural Relay"), zirkulärer Informationsabhängigkeit und progressiver Schwierigkeitssteigerung.
+
+#### Verwendeter Prompt:
+> Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+> Die neue Referenz-ID für diese Aufgabe lautet: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
+> 
+> KONTEXT:
+> Wir implementieren das Minispiel "Notification Overload" (Issue #27) für 2 bis 4 Spieler. Das Spiel nutzt echte Android-Systembenachrichtigungen (NotificationManager), um Reizüberflutung zu simulieren. Ein zufällig ausgewählter Spieler (Target Node) muss die Benachrichtigungen auf seinem Smartphone verwalten, während die verbleibenden Spieler (Analysten) ihm die richtigen Befehle und Keys zurufen müssen.
+> 
+> AUFGABE:
+> Erstelle die Logik für das Minispiel `NotificationOverloadScreen` sowie die dazugehörigen Services im `GameViewModel` und dem Android-System.
+> 
+> Bitte implementiere folgende Kern-Komponenten für 2 bis 4 Spieler:
+> 
+> 1. Berechtigungen & Rollenverteilung (2-4 Spieler):
+>    - Deklariere die Berechtigung `POST_NOTIFICATIONS` für Android 13+.
+>    - Bestimme dynamisch beim Start des Minispiels per Zufall einen "Target Node" (Spieler X). Alle anderen aktiven Teilnehmer im Raum werden zu "Analysten".
+>    - Nur auf dem Gerät des "Target Node" werden physische Android-System-Benachrichtigungen abgefeuert.
+> 
+> 2. Der Notification-Spam-Generator (Für den Target Node):
+>    - Erstelle eine Schleife, die im Abstand von 1.5 bis 2.5 Sekunden echte System-Benachrichtigungen über den `NotificationManager` erzeugt.
+>    - Jede Benachrichtigung erhält ein eindeutiges Tag/Label (z.B. "VAULT-SECURITY: Breach ID #1024", "CRITICAL_ERR: Sector #7742").
+>    - Eine dieser Benachrichtigungen ist der "GOLDEN KEY". Wenn der Target-Spieler auf diese klickt, triggert der `PendingIntent` die Rückkehr zur App und meldet den Erfolg für das gesamte Team (`completeCurrentMinigame()`).
+> 
+> 3. Das verteilte Hacker-Terminal (Für die Analysten):
+>    - Die Analysten sehen auf ihren Bildschirmen KEINE System-Benachrichtigungen, sondern neongrüne Cyberpunk-Konsolen.
+>    - Teile die Information dynamisch auf die Analysten auf:
+>      - Bei 2 Spielern: Analyst A sieht den vollständigen Ziel-Code (z.B. "TARGET: INTERCEPT BREACH ID #7742").
+>      - Bei 3-4 Spielern: Teile den Code oder die Filter-Regeln auf (z.B. Analyst A sieht "TARGET SECTOR: #7000-#8000", Analyst B sieht "EXACT ID ENDS WITH: ...42"). Dies erzwingt aktive verbal Kommunikaton im gesamten Team!
+> 
+> 4. Fehler- und Abbruchbedingungen:
+>    - Tracke die Anzahl der aktiven Benachrichtigungen. Wenn der Target Node zu langsam wischt und mehr als 10 Benachrichtigungen unserer App gleichzeitig in der Statusleiste aktiv sind, gilt das Spiel wegen "System-Überlastung" als fehlgeschlagen (`onFail()`).
+>    - Wischt der Target Node die korrekte "Golden Key"-Benachrichtigung versehentlich weg (Delete-Intent via `getDeleteIntent`), wird sofort ein Alarm ausgelöst (`onMistake()`).
+> 
+> DENK AN DIE ENTWICKLUNGS-RICHTLINIEN AUS DER AI_RULES.txt:
+> - Kette die neue ID [REF-ISSUE27-NOTIFICATION-OVERLOAD] im Datei-Header an.
+> - Nutze im neuen Code den Kommentar: // AI-Generated: Immersive Android System Notification Overload Game
+> - Schreibe verständliche deutsche Inline-Kommentare, insbesondere zur dynamischen Rollenverteilung für 2-4 Spieler, NotificationChannels und PendingIntents.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Das Team konzipierte die Erweiterung zum "Neural Relay"-System, bei dem jeder Spieler gleichzeitig Informationen empfängt und für einen Partner sendet (zirkuläre Abhängigkeit). Dies steigerte die kooperative Tiefe im Vergleich zum ursprünglichen Target-Analyst-Modell erheblich. Zudem wurde die UI-Persistenz im Erfolgsfall optimiert: Spieler bleiben nach Abschluss ihrer Aufgabe als "Informations-Relais" aktiv, wobei die für Partner relevanten Daten weiterhin im Overlay angezeigt werden. Die progressive Schwierigkeitssteigerung (Speed Scaling) wurde durch manuelle Justierung des `speedFactor` (Reduktion um 3% pro Iteration) ausbalanciert.
