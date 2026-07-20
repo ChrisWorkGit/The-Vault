@@ -1,6 +1,7 @@
 // PROMPT-REFERENZ: [REF-FIX-RANDOM-MINIGAME]
 // PROMPT-REFERENZ: [REF-ISSUE30-REAL-DEVICE-FIX]
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
+// PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ import com.uniprojekt.thevault.data.VaultRepository
 import com.uniprojekt.thevault.data.model.GameSession
 import com.uniprojekt.thevault.data.model.HeistStat
 import com.uniprojekt.thevault.data.model.MinigameResult
+import com.uniprojekt.thevault.data.model.PlayerProfile
 import com.uniprojekt.thevault.network.NetworkManager
 import com.uniprojekt.thevault.network.NetworkUtils
 import kotlinx.coroutines.Job
@@ -39,7 +41,7 @@ class GameViewModel : ViewModel() {
         object Lobby : GameState
         object StartScreen : GameState
         object Archive : GameState
-        data class InLobby(val players: List<String>, val isHost: Boolean) : GameState
+        data class InLobby(val players: List<PlayerProfile>, val isHost: Boolean) : GameState
         data class Playing(val index: Int, val name: String, val isCompleted: Boolean = false) : GameState
         data class WaitingForTeam(val nextIndex: Int) : GameState
         data class GameOver(val isWin: Boolean, val reason: String? = null, val stat: HeistStat? = null) : GameState
@@ -57,10 +59,13 @@ class GameViewModel : ViewModel() {
     private val _showScanner = MutableStateFlow(false)
     val showScanner: StateFlow<Boolean> = _showScanner.asStateFlow()
 
-    private val _playerName = MutableStateFlow("AGENT_${(1000..9999).random()}")
-    val playerName: StateFlow<String> = _playerName.asStateFlow()
+    // AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
+    private val _localPlayer = MutableStateFlow(PlayerProfile(name = "AGENT_${(1000..9999).random()}"))
+    val localPlayer: StateFlow<PlayerProfile> = _localPlayer.asStateFlow()
 
-    private val _players = MutableStateFlow<List<String>>(emptyList())
+    private val _players = MutableStateFlow<List<PlayerProfile>>(emptyList())
+    val players: StateFlow<List<PlayerProfile>> = _players.asStateFlow()
+
     private var isHost = false
 
     private val _gameState = MutableStateFlow<GameState>(GameState.StartScreen)
@@ -108,10 +113,10 @@ class GameViewModel : ViewModel() {
 
         if (n == 1) {
             // Fallback für Single Player (Debug)
-            val targetPlayer = allPlayers[0]
+            val targetPlayerProfile = allPlayers[0]
             val goldenKey = (1000..9999).random().toString()
-            NetworkManager.sendMessage("NOTIF_SETUP:$targetPlayer|$goldenKey")
-            handleNotificationSetup(targetPlayer, goldenKey)
+            NetworkManager.sendMessage("NOTIF_SETUP:${targetPlayerProfile.name}|$goldenKey")
+            handleNotificationSetup(targetPlayerProfile.name, goldenKey)
             return
         }
 
@@ -122,14 +127,13 @@ class GameViewModel : ViewModel() {
         // Spieler[i] muss keys[i] finden.
         // Spieler[(i+1)%n] bekommt die Info über keys[i].
         // Format: NAME:MY_KEY:AGENT_TO_HELP:KEY_FOR_THEM
-        val assignments = allPlayers.mapIndexed { i, name ->
+        val assignments = allPlayers.mapIndexed { i, profile ->
             val myKey = keys[i]
-            val prevIndex = if (i == 0) n - 1 else i - 1
             val nextIndex = (i + 1) % n
             
-            val agentToHelp = allPlayers[nextIndex]
+            val agentToHelp = allPlayers[nextIndex].name
             val keyToTellThem = keys[nextIndex]
-            "$name:$myKey:$agentToHelp:$keyToTellThem"
+            "${profile.name}:$myKey:$agentToHelp:$keyToTellThem"
         }.joinToString("|")
 
         NetworkManager.sendMessage("NOTIF_SETUP_V2:$assignments")
@@ -139,10 +143,10 @@ class GameViewModel : ViewModel() {
     /**
      * Bestimmt lokal die Rolle (Target vs Analyst) und den anzuzeigenden Inhalt.
      */
-    private fun handleNotificationSetup(targetPlayer: String, goldenKey: String) {
-        val myName = _playerName.value
+    private fun handleNotificationSetup(targetPlayerName: String, goldenKey: String) {
+        val myName = _localPlayer.value.name
         val allPlayers = _players.value
-        val isTarget = myName == targetPlayer
+        val isTarget = myName == targetPlayerName
 
         _notificationRole.value = if (isTarget) "TARGET" else "ANALYST"
 
@@ -151,8 +155,8 @@ class GameViewModel : ViewModel() {
             _notificationContent.value = goldenKey
         } else {
             // Analysten erhalten Teil-Informationen zur Kommunikation
-            val analysts = allPlayers.filter { it != targetPlayer }
-            val myAnalystIndex = analysts.indexOf(myName)
+            val analysts = allPlayers.filter { it.name != targetPlayerName }
+            val myAnalystIndex = analysts.indexOfFirst { it.name == myName }
 
             if (analysts.size <= 1) {
                 // Bei nur einem Analysten: Vollständiger Code
@@ -174,7 +178,7 @@ class GameViewModel : ViewModel() {
      * Assignments-Format: "NAME:MY_KEY:TARGET_NAME:TARGET_KEY|..."
      */
     private fun handleNotificationSetupV2(assignments: String) {
-        val myName = _playerName.value
+        val myName = _localPlayer.value.name
         val myEntry = assignments.split("|").find { it.startsWith("$myName:") } ?: return
         
         // Format: NAME : MY_KEY : TARGET_NAME : TARGET_KEY
@@ -189,22 +193,42 @@ class GameViewModel : ViewModel() {
         _notificationContent.value = "$myKeyToFind|$agentToHelp|$keyToTellAgent"
     }
 
+    /**
+     * Aktualisiert den Namen des lokalen Spielers.
+     * Nutzt die eindeutige ID, damit kein neuer Datensatz angelegt wird.
+     * // AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
+     */
     fun updatePlayerName(newName: String) {
-        _playerName.value = newName
+        val updatedProfile = _localPlayer.value.copy(name = newName)
+        _localPlayer.value = updatedProfile
+        
+        // Persistierung in Room anhand der ID
+        viewModelScope.launch {
+            vaultRepository?.saveOrUpdateProfile(updatedProfile)
+        }
+
         if (isHost) {
             updateHostPlayerList()
         } else {
-            NetworkManager.sendMessage("NAME_UPDATE:$newName")
+            NetworkManager.sendMessage("UPDATE_PLAYER_NAME:${updatedProfile.playerId}|$newName")
         }
     }
 
     private fun updateHostPlayerList() {
         // Host ist immer an Position 0
         val currentPlayers = _players.value.toMutableList()
+        val myProfile = _localPlayer.value
+        
         if (currentPlayers.isEmpty()) {
-            currentPlayers.add(_playerName.value)
+            currentPlayers.add(myProfile)
         } else {
-            currentPlayers[0] = _playerName.value
+            // Finde mich selbst anhand der ID und aktualisiere
+            val index = currentPlayers.indexOfFirst { it.playerId == myProfile.playerId }
+            if (index != -1) {
+                currentPlayers[index] = myProfile
+            } else {
+                currentPlayers[0] = myProfile
+            }
         }
         _players.value = currentPlayers
         broadcastPlayerList()
@@ -212,7 +236,8 @@ class GameViewModel : ViewModel() {
     }
 
     private fun broadcastPlayerList() {
-        val listString = _players.value.joinToString(",")
+        // Format: id1:name1,id2:name2
+        val listString = _players.value.joinToString(",") { "${it.playerId}:${it.name}" }
         NetworkManager.sendMessage("PLAYER_LIST_UPDATE:$listString")
     }
 
@@ -230,7 +255,7 @@ class GameViewModel : ViewModel() {
 
     fun startHosting() {
         isHost = true
-        _players.value = listOf(_playerName.value)
+        _players.value = listOf(_localPlayer.value)
         // Keinen sofortigen Wechsel in die Lobby - Host bleibt auf StartScreen bis Client kommt
         val ip = NetworkUtils.getLocalIpv4Address()
         _hostIp.value = ip ?: "IP nicht gefunden"
@@ -256,8 +281,9 @@ class GameViewModel : ViewModel() {
                 onHandshakeDone = { success ->
                     _isConnected.value = success
                     if (success) {
-                        _gameState.value = GameState.InLobby(listOf(_playerName.value), false)
-                        NetworkManager.sendMessage("NAME_UPDATE:${_playerName.value}")
+                        val profile = _localPlayer.value
+                        _gameState.value = GameState.InLobby(listOf(profile), false)
+                        NetworkManager.sendMessage("UPDATE_PLAYER_NAME:${profile.playerId}|${profile.name}")
                     }
                 },
                 onMessageReceived = { msg, sender -> handleNetworkMessage(msg, sender) }
@@ -267,12 +293,24 @@ class GameViewModel : ViewModel() {
 
     private fun handleNetworkMessage(message: String, senderId: String?) {
         when {
-            message.startsWith("NAME_UPDATE:") -> {
+            message.startsWith("UPDATE_PLAYER_NAME:") -> {
                 if (isHost) {
-                    val name = message.substringAfter("NAME_UPDATE:")
-                    val currentList = _players.value.toMutableList()
-                    if (!currentList.contains(name)) {
-                        currentList.add(name)
+                    val data = message.substringAfter("UPDATE_PLAYER_NAME:")
+                    val parts = data.split("|")
+                    if (parts.size == 2) {
+                        val id = parts[0]
+                        val name = parts[1]
+                        
+                        val currentList = _players.value.toMutableList()
+                        val existingIndex = currentList.indexOfFirst { it.playerId == id }
+                        
+                        // AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
+                        if (existingIndex != -1) {
+                            currentList[existingIndex] = currentList[existingIndex].copy(name = name)
+                        } else {
+                            currentList.add(PlayerProfile(playerId = id, name = name))
+                        }
+                        
                         _players.value = currentList
                         broadcastPlayerList()
                         updateLobbyState()
@@ -281,7 +319,11 @@ class GameViewModel : ViewModel() {
             }
             message.startsWith("PLAYER_LIST_UPDATE:") -> {
                 if (!isHost) {
-                    val list = message.substringAfter("PLAYER_LIST_UPDATE:").split(",")
+                    val listString = message.substringAfter("PLAYER_LIST_UPDATE:")
+                    val list = listString.split(",").mapNotNull {
+                        val parts = it.split(":")
+                        if (parts.size == 2) PlayerProfile(playerId = parts[0], name = parts[1]) else null
+                    }
                     _players.value = list
                     updateLobbyState()
                 }
@@ -522,7 +564,7 @@ class GameViewModel : ViewModel() {
         if (isHost) {
             val stat = HeistStat(
                 timestamp = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date()),
-                players = _players.value.joinToString(", "),
+                players = _players.value.joinToString(", ") { it.name },
                 totalDurationSeconds = _timerSeconds.value,
                 gameSequence = playedGames.joinToString(" -> "),
                 totalErrorsMade = _totalErrors.value,
@@ -645,6 +687,18 @@ class GameViewModel : ViewModel() {
         this.vaultRepository = repository
         viewModelScope.launch {
             repository.allHeistStats.collect { _archivedStats.value = it }
+        }
+        // AI-Generated: Fix agent renaming logic - load or create local profile
+        viewModelScope.launch {
+            repository.localProfile.collect { profile ->
+                if (profile != null) {
+                    _localPlayer.value = profile
+                    if (isHost) updateHostPlayerList()
+                } else {
+                    // Erstes Mal App gestartet
+                    repository.saveOrUpdateProfile(_localPlayer.value)
+                }
+            }
         }
     }
     fun saveFinalSession(session: GameSession, results: List<MinigameResult>) {

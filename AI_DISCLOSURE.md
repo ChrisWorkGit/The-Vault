@@ -437,3 +437,43 @@ Analyse der Netzwerk-Logs auf physischen Testgeräten zur Identifikation des Syn
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Das Team konzipierte die Erweiterung zum "Neural Relay"-System, bei dem jeder Spieler gleichzeitig Informationen empfängt und für einen Partner sendet (zirkuläre Abhängigkeit). Dies steigerte die kooperative Tiefe im Vergleich zum ursprünglichen Target-Analyst-Modell erheblich. Zudem wurde die UI-Persistenz im Erfolgsfall optimiert: Spieler bleiben nach Abschluss ihrer Aufgabe als "Informations-Relais" aktiv, wobei die für Partner relevanten Daten weiterhin im Overlay angezeigt werden. Die progressive Schwierigkeitssteigerung (Speed Scaling) wurde durch manuelle Justierung des `speedFactor` (Reduktion um 3% pro Iteration) ausbalanciert.
+
+### 🔹 Referenz: [REF-ISSUE37-RENAME-AGENT-FIX]
+* **Datum:** 20.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+    * `app/src/main/java/com/uniprojekt/thevault/data/model/PlayerProfile.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/dao/PlayerProfileDao.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/VaultDatabase.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/data/VaultRepository.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/LobbyScreen.kt`
+* **Inhalt/Ziel:** Behebung der fehlerhaften Rename-Logik. Umstellung auf ID-basierte Updates (UUID) in der Room-Datenbank und im P2P-Netzwerk, um Duplikate bei Namensänderungen zu verhindern. Implementierung eines stabilen UI-Edit-Workflows.
+
+#### Verwendeter Prompt:
+> Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+> Die neue Referenz-ID für diese Aufgabe lautet: [REF-ISSUE37-RENAME-AGENT-FIX]
+> 
+> KONTEXT:
+> Beim Ändern/Umbenennen des Agentennamens (z. B. in den Profil-Einstellungen oder in der Lobby) wird aktuell fälschlicherweise ein NEUER Agent in der Room-Datenbank bzw. in der internen Liste angelegt, anstatt den bestehenden Agenten-Datensatz zu aktualisieren. Dies führt zu Duplikaten, verwirrender Zuordnung bei den Heist-Statistiken und Fehlern bei der Netzwerk-Synchronisation.
+> 
+> AUFGABE:
+> Repariere die Rename-Logik in den entsprechenden ViewModels und Datenmodellen (z. B. `GameViewModel.kt`, `VaultRepository.kt` oder `PlayerProfileManager.kt`).
+> 
+> Bitte setze folgende technische Fixes um:
+> 
+> 1. Eindeutige ID-basierte Aktualisierung (Primary Key):
+>    - Stelle sicher, dass jeder Agent über eine eindeutige, unveränderliche ID (z. B. `playerId` / `UUID`) identifiziert wird.
+>    - Der Name darf NICHT als Primärschlüssel (Primary Key) in der Room-Datenbank verwendet werden.
+>    - Beim Umbenennen muss eine `UPDATE`-Operation auf dem bestehenden Datenbank-Datensatz anhand der `playerId` ausgeführt werden (z. B. `@Update` im Room DAO), anstatt ein neues Objekt via `INSERT` / `OnConflictStrategy.REPLACE` einzufügen, wenn sich die ID nicht geändert hat.
+> 
+> 2. State- & Netzwerk-Synchronisation:
+>    - Aktualisiere den Namen im bestehenden `Player`/`Agent`-Objekt innerhalb der aktiven Session (StateFlows).
+>    - Falls die Namensänderung während einer Lobbysitzung stattfindet, übertrage ein `UPDATE_PLAYER_NAME`-Signal an den Host/die Clients, um den Namen für die bestehende `playerId` remote zu aktualisieren, ohne die Spielerliste im `GameViewModel` neu zu erweitern.
+> 
+> [ZUSATZANFRAGE]:
+> Das anklicken für ändern ist noch schwer da nach jeder änderung das textfeld aktualisiert oder so muss man die ganze zeit neu draufklicken und es ist schwirig einen namen einzugeben ändere das so ab das erst wenn der name geändert wurde die akktuallisierung kommt oder so?
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Das Team identifizierte die zirkuläre Abhängigkeit in der Compose-UI, bei der jeder Tastendruck einen globalen State-Update und damit eine Recomposition des Textfeldes auslöste (Fokus-Verlust). Als Lösung konzipierte das Team den "Buffered Edit"-Workflow im `LobbyScreen`: Namensänderungen werden nun lokal in einem Zwischenspeicher gehalten und erst bei expliziter Bestätigung (Häkchen-Icon oder ImeAction.Done) an das Netzwerk und die Datenbank übertragen. Zudem entschied sich das Team für die Einführung einer separaten `PlayerProfile`-Tabelle, um die Profil-Historie sauber von den transienten `HeistStat`-Agentenlisten zu trennen.

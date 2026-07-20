@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
+// PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
 package com.uniprojekt.thevault.ui.screens
 
 import android.content.ClipData
@@ -14,30 +15,42 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.uniprojekt.thevault.data.model.PlayerProfile
 import com.uniprojekt.thevault.network.NetworkUtils
 import com.uniprojekt.thevault.ui.theme.*
 
 // AI-Generated: Multiplayer Lobby & Synchronized In-Game Menu
+// AI-Generated: Fix agent renaming logic to update existing record instead of creating duplicate
 
 /**
  * Lobby-Bildschirm für den Heist. Zeigt verbundene Agenten und ermöglicht dem Host den Start.
  */
 @Composable
 fun LobbyScreen(
-    players: List<String>,
+    players: List<PlayerProfile>,
     isHost: Boolean,
     currentPlayerName: String,
     hostIp: String?,
@@ -80,10 +93,11 @@ fun LobbyScreen(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(4) { index ->
+                val player = players.getOrNull(index)
                 PlayerSlot(
                     index = index,
-                    name = players.getOrNull(index),
-                    isSelf = (index == 0 && isHost) || (players.getOrNull(index) == currentPlayerName && !isHost),
+                    name = player?.name,
+                    isSelf = (index == 0 && isHost) || (player?.name == currentPlayerName && !isHost),
                     currentPlayerName = currentPlayerName,
                     onNameChange = onNameChange
                 )
@@ -172,7 +186,11 @@ fun PlayerSlot(
     onNameChange: (String) -> Unit
 ) {
     val isOccupied = name != null
-    
+    var localName by remember(currentPlayerName) { mutableStateOf(currentPlayerName) }
+    var isEditing by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+
     Box(
         modifier = Modifier
             .aspectRatio(1.2f)
@@ -200,19 +218,59 @@ fun PlayerSlot(
             
             if (isOccupied) {
                 if (isSelf) {
-                    BasicTextField(
-                        value = currentPlayerName,
-                        onValueChange = onNameChange,
-                        textStyle = TextStyle(
-                            color = NeonGreen,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        ),
-                        cursorBrush = SolidColor(NeonGreen),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        BasicTextField(
+                            value = localName,
+                            onValueChange = { 
+                                localName = it
+                                isEditing = true
+                            },
+                            textStyle = TextStyle(
+                                color = NeonGreen,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            ),
+                            cursorBrush = SolidColor(NeonGreen),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    onNameChange(localName)
+                                    isEditing = false
+                                    focusManager.clearFocus()
+                                }
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { if (it.isFocused) isEditing = true }
+                        )
+                        
+                        // Kleiner Bestätigungs-Button oder Edit-Icon
+                        IconButton(
+                            onClick = {
+                                if (isEditing) {
+                                    onNameChange(localName)
+                                    isEditing = false
+                                    focusManager.clearFocus()
+                                } else {
+                                    focusRequester.requestFocus()
+                                }
+                            },
+                            modifier = Modifier.size(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                                contentDescription = "Rename",
+                                tint = NeonGreen,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
                     Text(
                         text = "[YOU]",
                         color = NeonGreen.copy(alpha = 0.6f),
