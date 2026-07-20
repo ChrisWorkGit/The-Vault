@@ -1,3 +1,4 @@
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.content.Context
@@ -6,29 +7,12 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -44,12 +28,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.uniprojekt.thevault.ui.theme.DarkGreen
-import com.uniprojekt.thevault.ui.theme.HousingColor
-import com.uniprojekt.thevault.ui.theme.NeonGreen
-import com.uniprojekt.thevault.ui.theme.NeonRed
-import com.uniprojekt.thevault.ui.theme.NeutralColor
-import com.uniprojekt.thevault.ui.theme.TextGreen
+import com.uniprojekt.thevault.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
@@ -212,174 +191,187 @@ fun RotationLockScreen(
     }
 
     // UI
-    Column(
+    // UI
+    // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(CyberBackground)
+            .crtOverlay()
     ) {
-        Text(
-            text = "Schloss stechen",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            color = NeonGreen
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Dietrich wischen · Handy nach rechts drehen zum Spannen",
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextGreen
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        val pickColor = lerp(Color.White, NeonRed, stress)
-
-        Canvas(
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .aspectRatio(1f)
-                .pointerInput(isSolved, isFailed, isGameActive) {
-                    if (isSolved || isFailed || !isGameActive) return@pointerInput
-                    detectDragGestures { change, drag ->
-                        change.consume()
-                        pickAngleDeg = (pickAngleDeg - drag.x * TOUCH_SENSITIVITY).coerceIn(PICK_MIN_DEG, PICK_MAX_DEG)
-                    }
-                }
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val center = Offset(cx, cy)
-            val outerR = size.minDimension / 2f * 0.92f
-            val plugR = outerR * 0.72f
-
-            // Gehäuse
-            drawCircle(color = HousingColor, radius = outerR, center = center)
-            drawCircle(
-                color = NeonGreen.copy(alpha = 0.55f),
-                radius = outerR,
-                center = center,
-                style = Stroke(width = 3f)
+            Text(
+                text = "Schloss stechen",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = NeonGreen
             )
-
-            // Anfangsstellung
-            drawCircle(
-                color = NeonGreen.copy(alpha = 0.5f),
-                radius = 5f,
-                center = Offset(cx, cy + outerR - 2f)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Dietrich wischen · Handy nach rechts drehen zum Spannen",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextGreen
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            rotate(degrees = cylinderAngle, pivot = center) {
-                // Schlosszylinder
-                drawCircle(color = DarkGreen, radius = plugR, center = center)
+            val pickColor = lerp(Color.White, NeonRed, stress)
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .aspectRatio(1f)
+                    .pointerInput(isSolved, isFailed, isGameActive) {
+                        if (isSolved || isFailed || !isGameActive) return@pointerInput
+                        detectDragGestures { change, drag ->
+                            change.consume()
+                            pickAngleDeg = (pickAngleDeg - drag.x * TOUCH_SENSITIVITY).coerceIn(PICK_MIN_DEG, PICK_MAX_DEG)
+                        }
+                    }
+            ) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val center = Offset(cx, cy)
+                val outerR = size.minDimension / 2f * 0.92f
+                val plugR = outerR * 0.72f
+
+                // Gehäuse
+                drawCircle(color = HousingColor, radius = outerR, center = center)
                 drawCircle(
-                    color = NeonGreen.copy(alpha = 0.7f),
-                    radius = plugR,
+                    color = NeonGreen.copy(alpha = 0.55f),
+                    radius = outerR,
                     center = center,
                     style = Stroke(width = 3f)
                 )
 
-                // Schlüsselloch
-                drawCircle(color = Color.Black, radius = plugR * 0.14f, center = center)
-                drawLine(
-                    color = Color.Black,
-                    start = center,
-                    end = Offset(cx, cy + plugR * 0.55f),
-                    strokeWidth = plugR * 0.16f,
-                    cap = StrokeCap.Round
+                // Anfangsstellung
+                drawCircle(
+                    color = NeonGreen.copy(alpha = 0.5f),
+                    radius = 5f,
+                    center = Offset(cx, cy + outerR - 2f)
                 )
 
-                // Spannhebel
-                val leverColor = NeutralColor
-                val leverTop = Offset(cx, cy + plugR * 0.45f)
-                val leverBottom = Offset(cx, cy + outerR * 1.02f)
-                drawLine(
-                    color = leverColor,
-                    start = leverTop,
-                    end = leverBottom,
-                    strokeWidth = 16f,
-                    cap = StrokeCap.Round
-                )
+                rotate(degrees = cylinderAngle, pivot = center) {
+                    // Schlosszylinder
+                    drawCircle(color = DarkGreen, radius = plugR, center = center)
+                    drawCircle(
+                        color = NeonGreen.copy(alpha = 0.7f),
+                        radius = plugR,
+                        center = center,
+                        style = Stroke(width = 3f)
+                    )
 
-                // Dietrich
-                val rad = Math.toRadians(pickAngleDeg.toDouble())
-                val dirX = cos(rad).toFloat()
-                val dirY = -sin(rad).toFloat()
-                val pickLen = plugR * 1.55f
+                    // Schlüsselloch
+                    drawCircle(color = Color.Black, radius = plugR * 0.14f, center = center)
+                    drawLine(
+                        color = Color.Black,
+                        start = center,
+                        end = Offset(cx, cy + plugR * 0.55f),
+                        strokeWidth = plugR * 0.16f,
+                        cap = StrokeCap.Round
+                    )
 
-                // Zittern bei Belastung
-                val shake = if (stress > 0.25f) (Random.nextFloat() - 0.5f) * stress * 6f else 0f
-                val tip = Offset(cx + dirX * pickLen + shake, cy + dirY * pickLen)
-                val hookMid = Offset(cx + dirX * pickLen * 0.82f, cy + dirY * pickLen * 0.82f)
+                    // Spannhebel
+                    val leverColor = NeutralColor
+                    val leverTop = Offset(cx, cy + plugR * 0.45f)
+                    val leverBottom = Offset(cx, cy + outerR * 1.02f)
+                    drawLine(
+                        color = leverColor,
+                        start = leverTop,
+                        end = leverBottom,
+                        strokeWidth = 16f,
+                        cap = StrokeCap.Round
+                    )
 
-                val pickPath = Path().apply {
-                    moveTo(cx, cy)
-                    lineTo(hookMid.x, hookMid.y)
-                    lineTo(tip.x, tip.y)
+                    // Dietrich
+                    val rad = Math.toRadians(pickAngleDeg.toDouble())
+                    val dirX = cos(rad).toFloat()
+                    val dirY = -sin(rad).toFloat()
+                    val pickLen = plugR * 1.55f
+
+                    // Zittern bei Belastung
+                    val shake = if (stress > 0.25f) (Random.nextFloat() - 0.5f) * stress * 6f else 0f
+                    val tip = Offset(cx + dirX * pickLen + shake, cy + dirY * pickLen)
+                    val hookMid = Offset(cx + dirX * pickLen * 0.82f, cy + dirY * pickLen * 0.82f)
+
+                    val pickPath = Path().apply {
+                        moveTo(cx, cy)
+                        lineTo(hookMid.x, hookMid.y)
+                        lineTo(tip.x, tip.y)
+                    }
+                    drawPath(
+                        path = pickPath,
+                        color = pickColor,
+                        style = Stroke(width = 7f, cap = StrokeCap.Round)
+                    )
+                    drawCircle(color = pickColor, radius = 5f, center = center)
                 }
-                drawPath(
-                    path = pickPath,
-                    color = pickColor,
-                    style = Stroke(width = 7f, cap = StrokeCap.Round)
-                )
-                drawCircle(color = pickColor, radius = 5f, center = center)
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Verbleibende Dietriche/Versuche
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Dietriche: ",
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Monospace,
-                color = TextGreen
-            )
-            repeat(MAX_ATTEMPTS) { i ->
-                Text(
-                    text = "|",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = FontFamily.Monospace,
-                    color = if (i < attemptsLeft) NeonGreen else NeutralColor.copy(alpha = 0.4f)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Belastungsanzeige
-        Text(
-            text = when {
-                isSolved -> "GEKNACKT"
-                isFailed -> "ALLE DIETRICHE GEBROCHEN"
-                stress > 0.66f -> "!! DIETRICH GLEICH GEBROCHEN !!"
-                stress > 0.15f -> "Spannung zu hoch"
-                else -> "Dietrich ausrichten und vorsichtig spannen"
-            },
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace,
-            color = lerp(TextGreen, NeonRed, stress)
-        )
-
-        if (!hasSensor) {
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Verbleibende Dietriche/Versuche
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Dietriche: ",
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = TextGreen
+                )
+                repeat(MAX_ATTEMPTS) { i ->
+                    Text(
+                        text = "|",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontFamily = FontFamily.Monospace,
+                        color = if (i < attemptsLeft) NeonGreen else NeutralColor.copy(alpha = 0.4f)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Belastungsanzeige
             Text(
-                text = "Kein Rotationssensor.",
+                text = when {
+                    isSolved -> "GEKNACKT"
+                    isFailed -> "ALLE DIETRICHE GEBROCHEN"
+                    stress > 0.66f -> "!! DIETRICH GLEICH GEBROCHEN !!"
+                    stress > 0.15f -> "Spannung zu hoch"
+                    else -> "Dietrich ausrichten und vorsichtig spannen"
+                },
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
-                color = NeutralColor
+                color = lerp(TextGreen, NeonRed, stress)
             )
-            Slider(
-                value = tensionFrac,
-                onValueChange = { if (!isSolved && !isFailed && isGameActive) tensionFrac = it },
-                valueRange = 0f..1f,
-                modifier = Modifier.fillMaxWidth(0.8f)
-            )
+
+            if (!hasSensor) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Kein Rotationssensor.",
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = NeutralColor
+                )
+                Slider(
+                    value = tensionFrac,
+                    onValueChange = { if (!isSolved && !isFailed && isGameActive) tensionFrac = it },
+                    valueRange = 0f..1f,
+                    modifier = Modifier.fillMaxWidth(0.8f)
+                )
+            }
+        }
+
+        if (!isGameActive) {
+            WaitingForTeamOverlay()
         }
     }
 }

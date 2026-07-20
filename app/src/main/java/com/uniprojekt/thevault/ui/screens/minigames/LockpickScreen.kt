@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE13-LOCKPICK-DIETRICH-SHAPE]
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.content.Context
@@ -7,6 +8,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
@@ -194,118 +197,135 @@ fun LockpickScreen(
         }
     }
 
-    Column(
+    // UI
+    // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(CyberBackground)
+            .crtOverlay()
     ) {
-        Text(text = "Schloss knacken", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Handy vor/zurück kippen bis der Zylinder einrastet",
-            fontSize = 12.sp
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Canvas(
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .height(220.dp)
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            scale(scaleX = size.width / VIRTUAL_W, scaleY = size.height / VIRTUAL_H, pivot = Offset.Zero) {
-                drawRoundRect(      // Gehäuse
-                    color = HousingColor,
-                    topLeft = Offset(HOUSING_LEFT, HOUSING_TOP),
-                    size = Size(HOUSING_RIGHT - HOUSING_LEFT, HOUSING_BOTTOM - HOUSING_TOP),
-                    cornerRadius = CornerRadius(6f, 6f),
-                    style = Stroke(width = 2f)
-                )
-                drawRoundRect(      // Schließzylinder
-                    color = HousingColor,
-                    topLeft = Offset(PLUG_LEFT, PLUG_TOP),
-                    size = Size(PLUG_RIGHT - PLUG_LEFT, PLUG_BOTTOM - PLUG_TOP),
-                    cornerRadius = CornerRadius(6f, 6f),
-                    style = Stroke(width = 2f)
-                )
+            Text(text = "Schloss knacken", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = NeonGreen)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Handy vor/zurück kippen bis der Zylinder einrastet",
+                fontSize = 12.sp,
+                color = TextGreen
+            )
 
-                for (i in 0 until pins.size) {
-                    val pin = pins[i]
-                    val offset = currentOffsetPx(i)
-                    val total = pin.keyHeightPx + DRIVER_HEIGHT_PX
-                    val top = REST_TIP_Y - total - offset
-                    val cx = pinCenterX(i)
-                    val left = cx - PIN_WIDTH / 2f
+            Spacer(modifier = Modifier.height(16.dp))
 
-                    // Treiberstift (blau, oben) und Schlüsselstift (orange, unten)
-                    drawRect(
-                        color = DriverColor,
-                        topLeft = Offset(left, top),
-                        size = Size(PIN_WIDTH, DRIVER_HEIGHT_PX)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .height(220.dp)
+            ) {
+                scale(scaleX = size.width / VIRTUAL_W, scaleY = size.height / VIRTUAL_H, pivot = Offset.Zero) {
+                    drawRoundRect(      // Gehäuse
+                        color = HousingColor,
+                        topLeft = Offset(HOUSING_LEFT, HOUSING_TOP),
+                        size = Size(HOUSING_RIGHT - HOUSING_LEFT, HOUSING_BOTTOM - HOUSING_TOP),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 2f)
                     )
-                    drawRect(
-                        color = KeyColor,
-                        topLeft = Offset(left, top + DRIVER_HEIGHT_PX),
-                        size = Size(PIN_WIDTH, pin.keyHeightPx)
+                    drawRoundRect(      // Schließzylinder
+                        color = HousingColor,
+                        topLeft = Offset(PLUG_LEFT, PLUG_TOP),
+                        size = Size(PLUG_RIGHT - PLUG_LEFT, PLUG_BOTTOM - PLUG_TOP),
+                        cornerRadius = CornerRadius(6f, 6f),
+                        style = Stroke(width = 2f)
                     )
 
-                    // grün = eingerastet, blau = aktiv, grau = noch offen
-                    val borderColor = when {
-                        pin.isLocked -> LockedColor
-                        i == activePinIndex -> ActiveColor
-                        else -> NeutralColor
+                    for (i in 0 until pins.size) {
+                        val pin = pins[i]
+                        val offset = currentOffsetPx(i)
+                        val total = pin.keyHeightPx + DRIVER_HEIGHT_PX
+                        val top = REST_TIP_Y - total - offset
+                        val cx = pinCenterX(i)
+                        val left = cx - PIN_WIDTH / 2f
+
+                        // Treiberstift (blau, oben) und Schlüsselstift (orange, unten)
+                        drawRect(
+                            color = DriverColor,
+                            topLeft = Offset(left, top),
+                            size = Size(PIN_WIDTH, DRIVER_HEIGHT_PX)
+                        )
+                        drawRect(
+                            color = KeyColor,
+                            topLeft = Offset(left, top + DRIVER_HEIGHT_PX),
+                            size = Size(PIN_WIDTH, pin.keyHeightPx)
+                        )
+
+                        // grün = eingerastet, blau = aktiv, grau = noch offen
+                        val borderColor = when {
+                            pin.isLocked -> LockedColor
+                            i == activePinIndex -> ActiveColor
+                            else -> NeutralColor
+                        }
+                        drawRoundRect(
+                            color = borderColor,
+                            topLeft = Offset(left, top),
+                            size = Size(PIN_WIDTH, total),
+                            cornerRadius = CornerRadius(4f, 4f),
+                            style = Stroke(width = if (i == activePinIndex && !pin.isLocked) 4f else 2.5f)
+                        )
                     }
-                    drawRoundRect(
-                        color = borderColor,
-                        topLeft = Offset(left, top),
-                        size = Size(PIN_WIDTH, total),
-                        cornerRadius = CornerRadius(4f, 4f),
-                        style = Stroke(width = if (i == activePinIndex && !pin.isLocked) 4f else 2.5f)
-                    )
-                }
 
-                // AI-Generated: Dietrich-Haken-Form nach Referenzbild (langer Griff + abgewinkelte Spitze) statt gerader Linie - Kurve über quadraticTo() bildet den charakteristischen Knick nach.
-                val activeOffset = currentOffsetPx(activePinIndex)
-                val tipY = REST_TIP_Y - activeOffset + 3f
-                val ax = pinCenterX(activePinIndex)
-                val bendX = ax + 22f
-                val bendY = tipY + 26f
-                val handleX = VIRTUAL_W + 30f
-                val handleY = bendY + 4f
-                val pickPath = Path().apply {
-                    moveTo(ax, tipY)
-                    quadraticTo(bendX, bendY, handleX, handleY)
+                    // AI-Generated: Dietrich-Haken-Form nach Referenzbild (langer Griff + abgewinkelte Spitze) statt gerader Linie - Kurve über quadraticTo() bildet den charakteristischen Knick nach.
+                    val activeOffset = currentOffsetPx(activePinIndex)
+                    val tipY = REST_TIP_Y - activeOffset + 3f
+                    val ax = pinCenterX(activePinIndex)
+                    val bendX = ax + 22f
+                    val bendY = tipY + 26f
+                    val handleX = VIRTUAL_W + 30f
+                    val handleY = bendY + 4f
+                    val pickPath = Path().apply {
+                        moveTo(ax, tipY)
+                        quadraticTo(bendX, bendY, handleX, handleY)
+                    }
+                    drawPath(
+                        path = pickPath,
+                        color = PickColor,
+                        style = Stroke(width = 7f, cap = StrokeCap.Round)
+                    )
+                    drawCircle(color = PickColor, radius = 4.5f, center = Offset(ax, tipY))
+                    // Ende AI-Generated-Block
                 }
-                drawPath(
-                    path = pickPath,
-                    color = PickColor,
-                    style = Stroke(width = 7f, cap = StrokeCap.Round)
-                )
-                drawCircle(color = PickColor, radius = 4.5f, center = Offset(ax, tipY))
-                // Ende AI-Generated-Block
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Zylinder ${PIN_COUNT - activePinIndex} / ${pins.size} · ${pins.count { it.isLocked }} eingerastet",
+                fontSize = 13.sp,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { holdProgress },
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .alpha(if (holdProgress > 0f) 1f else 0f),
+                color = NeonGreen
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Position halten zum Einrasten...",
+                fontSize = 12.sp,
+                modifier = Modifier.alpha(if (holdProgress > 0f) 1f else 0f),
+                color = NeonGreen
+            )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Zylinder ${PIN_COUNT - activePinIndex} / ${pins.size} · ${pins.count { it.isLocked }} eingerastet",
-            fontSize = 13.sp
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        LinearProgressIndicator(
-            progress = { holdProgress },
-            modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .alpha(if (holdProgress > 0f) 1f else 0f)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Position halten zum Einrasten...",
-            fontSize = 12.sp,
-            modifier = Modifier.alpha(if (holdProgress > 0f) 1f else 0f)
-        )
+        if (!isGameActive) {
+            WaitingForTeamOverlay()
+        }
     }
 }

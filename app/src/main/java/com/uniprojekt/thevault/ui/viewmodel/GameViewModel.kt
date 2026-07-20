@@ -49,7 +49,7 @@ class GameViewModel : ViewModel() {
         object Archive : GameState
         data class InLobby(val players: List<PlayerProfile>, val isHost: Boolean) : GameState
         data class Playing(val index: Int, val name: String, val isCompleted: Boolean = false) : GameState
-        data class WaitingForTeam(val nextIndex: Int) : GameState
+        data class WaitingForTeam(val nextIndex: Int, val currentMinigameName: String? = null) : GameState
         data class GameOver(val isWin: Boolean, val reason: String? = null, val stat: HeistStat? = null) : GameState
     }
 
@@ -492,7 +492,7 @@ class GameViewModel : ViewModel() {
         if (currentState is GameState.Playing) {
             // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
             // Spieler geht lokal sofort in den Warten-Modus für bessere UX
-            _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
+            _gameState.value = GameState.WaitingForTeam(currentState.index + 1, currentState.name)
             
             // Signal an den Host (via Loopback falls man selbst Host ist)
             NetworkManager.sendMessage("MINIGAME_READY", useLoopback = true)
@@ -537,6 +537,10 @@ class GameViewModel : ViewModel() {
         _isGameActive.value = false
         startReadyPlayers.clear()
         readyPlayers.clear()
+        
+        // AI-Generated: Reset Notification Data for next minigame
+        _notificationRole.value = null
+        _notificationContent.value = null
 
         if (nextIndex < activeMinigameSequence.size) {
             val nextGame = activeMinigameSequence[nextIndex]
@@ -679,6 +683,8 @@ class GameViewModel : ViewModel() {
         _hostIp.value = null
         _showScanner.value = false
         _players.value = emptyList()
+        _notificationRole.value = null
+        _notificationContent.value = null
     }
 
     fun openScanner() = viewModelScope.launch { _showScanner.value = true }

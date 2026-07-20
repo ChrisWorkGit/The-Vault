@@ -160,7 +160,9 @@ fun MainApp(
                                     isCompleted = state.isCompleted,
                                     onSuccess = { viewModel.completeCurrentMinigame() },
                                     onFail = { viewModel.failCurrentMinigame() },
-                                    onMistake = { viewModel.addError() }
+                                    onMistake = { viewModel.addError() },
+                                    onReady = { viewModel.reportReadyToStart() },
+                                    isGameActive = isGameActive
                                 )
                             }
                             else -> {
@@ -183,7 +185,7 @@ fun MainApp(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "TIME_REMAINING: ${viewModel.formatTime(timerSeconds)}",
+                            text = "MISSION_TIME: ${viewModel.formatTime(timerSeconds)}",
                             color = NeonGreen,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 14.sp,
@@ -235,7 +237,7 @@ fun MainApp(
                         val relayRole = viewModel.notificationRole.collectAsState().value
                         val relayContent = viewModel.notificationContent.collectAsState().value
                         
-                        if (relayRole == "NEURAL_RELAY" && relayContent != null) {
+                        if (state.currentMinigameName == "NotificationOverload" && relayRole == "NEURAL_RELAY" && relayContent != null) {
                             val parts = relayContent.split("|")
                             if (parts.size >= 3) {
                                 Spacer(modifier = Modifier.height(32.dp))
