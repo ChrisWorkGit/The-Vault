@@ -2,6 +2,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE30-REAL-DEVICE-FIX]
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
 // PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
+// PROMPT-REFERENZ: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
 package com.uniprojekt.thevault.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -115,8 +116,7 @@ class GameViewModel : ViewModel() {
             // Fallback für Single Player (Debug)
             val targetPlayerProfile = allPlayers[0]
             val goldenKey = (1000..9999).random().toString()
-            NetworkManager.sendMessage("NOTIF_SETUP:${targetPlayerProfile.name}|$goldenKey")
-            handleNotificationSetup(targetPlayerProfile.name, goldenKey)
+            NetworkManager.sendMessage("NOTIF_SETUP:${targetPlayerProfile.name}|$goldenKey", useLoopback = true)
             return
         }
 
@@ -136,8 +136,8 @@ class GameViewModel : ViewModel() {
             "${profile.name}:$myKey:$agentToHelp:$keyToTellThem"
         }.joinToString("|")
 
-        NetworkManager.sendMessage("NOTIF_SETUP_V2:$assignments")
-        handleNotificationSetupV2(assignments)
+        // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback für konsistentes Setup
+        NetworkManager.sendMessage("NOTIF_SETUP_V2:$assignments", useLoopback = true)
     }
 
     /**
@@ -337,7 +337,7 @@ class GameViewModel : ViewModel() {
             }
             message == "MEMBER_START_READY" -> {
                 if (isHost && senderId != null) {
-                    handleMemberStartReady(false, senderId)
+                    handleMemberStartReady(senderId)
                 }
             }
             message == "START_LEVEL_NOW" -> {
@@ -345,9 +345,9 @@ class GameViewModel : ViewModel() {
             }
             message == "MINIGAME_READY" -> {
                 if (isHost && senderId != null) {
-                    // AI-Generated: Real Device Connection & Sync Patch
-                    // Host registriert, dass ein Client fertig ist über seine eindeutige IP
-                    handleClientReady(hostReady = false, senderId = senderId)
+                    // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
+                    // Host registriert Bereitschaft (von sich selbst via Loopback oder von Clients)
+                    handleClientReady(senderId = senderId)
                 }
             }
             message == "COMPLETE_MINIGAME_TRIGGER" -> {
@@ -400,8 +400,8 @@ class GameViewModel : ViewModel() {
         if (isHost) {
             val shuffled = defaultMinigames.shuffled()
             val seqString = shuffled.joinToString(",")
-            NetworkManager.sendMessage("START_GAME_TRIGGER:$seqString")
-            startGame(shuffled)
+            // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback für Spielstart
+            NetworkManager.sendMessage("START_GAME_TRIGGER:$seqString", useLoopback = true)
         }
     }
 
@@ -463,21 +463,18 @@ class GameViewModel : ViewModel() {
      * (z.B. Berechtigungen erteilt, Lautstärke ok).
      */
     fun reportReadyToStart() {
-        if (isHost) {
-            handleMemberStartReady(true, "HOST")
-        } else {
-            NetworkManager.sendMessage("MEMBER_START_READY")
-        }
+        // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback für konsistente Host-Logik
+        NetworkManager.sendMessage("MEMBER_START_READY", useLoopback = true)
     }
 
-    private fun handleMemberStartReady(hostReady: Boolean, senderId: String) {
+    private fun handleMemberStartReady(senderId: String) {
         if (isHost) {
             synchronized(startReadyPlayers) {
                 startReadyPlayers.add(senderId)
                 if (startReadyPlayers.size >= _players.value.size) {
                     startReadyPlayers.clear()
-                    NetworkManager.sendMessage("START_LEVEL_NOW")
-                    _isGameActive.value = true
+                    // Alle sind bereit -> Level-Start Kommando an alle (inkl. Loopback)
+                    NetworkManager.sendMessage("START_LEVEL_NOW", useLoopback = true)
                 }
             }
         }
@@ -486,30 +483,20 @@ class GameViewModel : ViewModel() {
     fun completeCurrentMinigame() {
         val currentState = _gameState.value
         if (currentState is GameState.Playing) {
-            // Spieler ist lokal fertig
-            _gameState.value = currentState.copy(isCompleted = true)
-
-            if (isHost) {
-                handleClientReady(hostReady = true, senderId = "HOST")
-            } else {
-                NetworkManager.sendMessage("MINIGAME_READY")
-            }
+            // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
+            // Spieler geht lokal sofort in den Warten-Modus für bessere UX
+            _gameState.value = GameState.WaitingForTeam(currentState.index + 1)
+            
+            // Signal an den Host (via Loopback falls man selbst Host ist)
+            NetworkManager.sendMessage("MINIGAME_READY", useLoopback = true)
         }
     }
 
-    private fun handleClientReady(hostReady: Boolean, senderId: String) {
+    private fun handleClientReady(senderId: String) {
         if (isHost) {
             synchronized(readyPlayers) {
                 readyPlayers.add(senderId)
                 checkAllPlayersReady()
-                
-                // Host State aktualisieren wenn er selbst fertig ist
-                if (hostReady) {
-                    val currentState = _gameState.value
-                    if (currentState is GameState.Playing) {
-                        _gameState.value = currentState.copy(isCompleted = true)
-                    }
-                }
             }
         }
     }
@@ -517,16 +504,14 @@ class GameViewModel : ViewModel() {
     private fun checkAllPlayersReady() {
         if (isHost) {
             // Wir prüfen gegen die aktuelle Anzahl der Sockets + 1 (Host)
-            // Falls ein Client disconnected ist, wird er oben aus readyPlayers entfernt
             if (readyPlayers.size >= _players.value.size) {
                 readyPlayers.clear()
 
-                // AI-Generated: Real Device Connection & Sync Patch
-                // Kurze Verzögerung einbauen, damit alle Clients Zeit haben, in den 'Waiting'-State zu wechseln
+                // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
+                // Alle fertig -> Trigger an alle (inkl. Loopback für den Host selbst)
                 viewModelScope.launch {
-                    delay(400) // 400ms Cooldown für physische Geräte-Synchronisation
-                    NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER")
-                    proceedToNextMinigame()
+                    delay(400) // Cooldown für physische Geräte-Synchronisation
+                    NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER", useLoopback = true)
                 }
             }
         }
@@ -541,8 +526,10 @@ class GameViewModel : ViewModel() {
         }
 
         val nextIndex = currentIndex + 1
+        // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Reset der Bereit-Listen für das nächste Minispiel
         _isGameActive.value = false
         startReadyPlayers.clear()
+        readyPlayers.clear()
 
         if (nextIndex < activeMinigameSequence.size) {
             val nextGame = activeMinigameSequence[nextIndex]
@@ -561,6 +548,7 @@ class GameViewModel : ViewModel() {
 
     private fun finishHeist(isWin: Boolean, reason: String? = null) {
         stopTimer()
+        _isGameActive.value = false
         if (isHost) {
             val stat = HeistStat(
                 timestamp = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date()),
@@ -570,13 +558,11 @@ class GameViewModel : ViewModel() {
                 totalErrorsMade = _totalErrors.value,
                 isVictory = isWin
             )
-            // Broadcast stat to all clients
+            // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback für Heist-Abschluss
             val json = serializeHeistStat(stat)
-            NetworkManager.sendMessage("HEIST_STAT_SUMMARY:$json")
-            saveHeistStatLocally(stat)
-            triggerGameOver(isWin = isWin, reason = reason, stat = stat)
+            NetworkManager.sendMessage("HEIST_STAT_SUMMARY:$json", useLoopback = true)
         } else if (reason != null) {
-            // Client triggered failure (e.g. connection lost)
+            // Client-seitiger Fehler (z.B. Verbindung verloren)
             triggerGameOver(isWin = isWin, reason = reason)
         }
     }
@@ -643,7 +629,8 @@ class GameViewModel : ViewModel() {
 
     fun abortGame() {
         stopTimer()
-        NetworkManager.sendMessage("GAME_OVER:DISCONNECTED_BY_USER")
+        // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Signal an Partner, selbst sofort Reset
+        NetworkManager.sendMessage("GAME_OVER:DISCONNECTED_BY_USER", useLoopback = false)
         resetToLobby()
     }
 
@@ -672,6 +659,12 @@ class GameViewModel : ViewModel() {
 
     fun resetToLobby() {
         stopTimer()
+        // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Reset aller spielbezogenen States
+        _isGameActive.value = false
+        readyPlayers.clear()
+        startReadyPlayers.clear()
+        activeMinigameSequence.clear()
+
         NetworkManager.closeConnection()
         _gameState.value = GameState.StartScreen
         _isConnected.value = false

@@ -522,5 +522,26 @@ Das Team identifizierte die zirkuläre Abhängigkeit in der Compose-UI, bei der 
 > [ZUSATZ]: Android resource linking failed. '#040805' is incompatible with attribute drawable. Tausche es auch auf der Log seite aus also auch beim screenshot bei der überischt ob man das psile geschafft hat.
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
-Das Team korrigierte den Ressourcen-Linking-Fehler, bei dem Hex-Codes direkt im adaptiven Icon-Hintergrund verwendet wurden, durch die Definition globaler Farbressourcen in `colors.xml`. Zudem optimierte das Team das App-Icon für Android 8.0+ durch die Aufteilung in Vordergrund (`ic_vault_logo_foreground`) und Hintergrund (`cyber_black`), um Parallax-Effekte zu ermöglichen. Die Integration wurde über den Startbildschirm hinaus auf die Lobby-, Highscore- (für Screenshots) und Archiv-Ansichten ausgeweitet, um ein konsistentes Branding sicherzustellen.
+Das Team korrigierte den Ressourcen-Linking-Fehler, bei dem Hex-Codes direkt im adaptiven Icon-Hintergrund verwendet wurden, durch die Definition globaler Farbressourcen in `colors.xml`. Zudem optimierte das Team das App-Icon für Android 8.0+ durch die Aufteilung in Vordergrund (`ic_vault_logo_foreground`) und Hintergrund (`cyber_black`), um Parallax-Effekte zu ermöglichen. Die Integration wurde über den Startbildschirm hinaus auf die Lobby-, Highscore- (für Screenshots) und Archiv-Ansichten ausgesteitet, um ein konsistentes Branding sicherzustellen.
 
+### 🔹 Referenz: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
+* **Datum:** 20.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+    * `app/src/main/java/com/uniprojekt/thevault/network/NetworkManager.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/NotificationOverloadScreen.kt`
+* **Inhalt/Ziel:** Analyse und Behebung von Desynchronisations-Problemen im P2P-Netzwerk. Einführung eines Loopback-Mechanismus für den Host und Zentralisierung der "Warten auf Team"-Logik in der State Machine.
+
+#### Verwendeter Prompt:
+> [Detaillierte Analyse der Desynchronisation zwischen Geräten: Local-Node-Bypass, uneinheitliche Ready-Screens.]
+> 
+> Aufgaben:
+> 1. NetworkManager: Implementiere Loopback-Handling, damit der Host seine eigenen Nachrichten über denselben Callback empfängt wie Clients (Single Source of Truth).
+> 2. GameViewModel: Refactoring der Ready-Logik. Nutze Loopback statt manueller Host-Weichen. Setze aktiv den State 'WaitingForTeam' bei lokalem Abschluss.
+> 3. UI-Bereinigung: Entferne individuelle Warten-Screens (z.B. in NotificationOverload) zugunsten der zentralen MainApp-Komponente.
+> 4. Stabilität: Stelle sicher, dass bei Abbruch alle Timer und Listen (readyPlayers) sauber geleert werden.
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Identifikation der Race-Conditions beim Testen mit mehreren Emulatoren/Geräten. Das Team definierte die Anforderung für das Loopback-Routing, um die Code-Komplexität im ViewModel zu reduzieren. Nach der Generierung wurde die Verzögerung von 400ms für physische Geräte validiert und die Integration der Relay-Informationen in den zentralen Warten-Screen vorgenommen, um die Spielbarkeit von "Notification Overload" zu erhalten.

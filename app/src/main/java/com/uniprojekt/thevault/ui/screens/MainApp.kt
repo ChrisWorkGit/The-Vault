@@ -3,6 +3,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE28-HIGHSCORE-SCREEN]
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
 // PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
+// PROMPT-REFERENZ: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
 package com.uniprojekt.thevault.ui.screens
 
 import androidx.compose.foundation.background
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +25,7 @@ import com.uniprojekt.thevault.data.VaultDatabase
 import com.uniprojekt.thevault.data.VaultRepository
 import com.uniprojekt.thevault.ui.screens.minigames.*
 import com.uniprojekt.thevault.ui.theme.NeonGreen
+import com.uniprojekt.thevault.ui.theme.TextGreen
 import com.uniprojekt.thevault.ui.theme.crtOverlay
 import com.uniprojekt.thevault.ui.theme.cyberpunkGlowStyle
 import com.uniprojekt.thevault.ui.viewmodel.GameViewModel
@@ -179,7 +182,7 @@ fun MainApp(
                             color = NeonGreen,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 14.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
@@ -213,15 +216,42 @@ fun MainApp(
                     modifier = Modifier.fillMaxSize().background(Color.Black).crtOverlay(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
                         CircularProgressIndicator(color = NeonGreen)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
                         Text(
                             text = "WAITING FOR TEAM...",
                             color = NeonGreen,
                             fontFamily = FontFamily.Monospace,
                             style = cyberpunkGlowStyle(NeonGreen)
                         )
+                        
+                        // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Relay-Info für Partner im zentralen Screen
+                        val relayRole = viewModel.notificationRole.collectAsState().value
+                        val relayContent = viewModel.notificationContent.collectAsState().value
+                        
+                        if (relayRole == "NEURAL_RELAY" && relayContent != null) {
+                            val parts = relayContent.split("|")
+                            if (parts.size >= 3) {
+                                Spacer(modifier = Modifier.height(32.dp))
+                                Text(text = "CRITICAL DATA BROADCAST:", color = TextGreen, fontSize = 12.sp)
+                                Text(
+                                    text = "AGENT ${parts[1]} NEEDS CODE:",
+                                    color = Color.White,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "#${parts[2]}",
+                                    color = NeonGreen,
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    style = cyberpunkGlowStyle(NeonGreen)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "ESTABLISHING UPLINK TO AGENTS",
                             color = NeonGreen.copy(alpha = 0.5f),

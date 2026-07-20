@@ -3,6 +3,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE23-INGAME-MENU]
 // PROMPT-REFERENZ: [REF-ISSUE23-LOBBY-SYSTEM]
 // PROMPT-REFERENZ: [REF-ISSUE30-REAL-DEVICE-FIX]
+// PROMPT-REFERENZ: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
 package com.uniprojekt.thevault.network
 
 import android.util.Log
@@ -42,6 +43,7 @@ object NetworkManager {
     
     private val listenJobs = Collections.synchronizedList(mutableListOf<Job>())
     private var isHost = false
+    private var messageCallback: ((String, String?) -> Unit)? = null
 
     /**
      * Startet den Host-Server und wartet in einer Schleife auf bis zu 3 Clients.
@@ -53,6 +55,7 @@ object NetworkManager {
     ) = withContext(Dispatchers.IO) {
         try {
             isHost = true
+            messageCallback = onMessageReceived
             onStatusUpdate("Server-Knoten initiiert. Warte auf Agenten...")
             val serverSocket = ServerSocket(PORT)
             
@@ -104,6 +107,7 @@ object NetworkManager {
     ) = withContext(Dispatchers.IO) {
         try {
             isHost = false
+            messageCallback = onMessageReceived
             onStatusUpdate("Infiltriere Host $hostIp...")
             val socket = Socket(hostIp, PORT)
             clientSocket = socket
@@ -150,9 +154,15 @@ object NetworkManager {
 
     /**
      * Sendet eine Nachricht. Wenn Host: Broadcast an alle. Wenn Client: Nur an Host.
+     * @param useLoopback Wenn true, wird die Nachricht auch lokal verarbeitet (Single Source of Truth).
      */
-    fun sendMessage(message: String) {
+    fun sendMessage(message: String, useLoopback: Boolean = false) {
         CoroutineScope(Dispatchers.IO).launch {
+            // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback Handling
+            if (useLoopback) {
+                messageCallback?.invoke(message, "LOCAL_LOOPBACK")
+            }
+
             if (isHost) {
                 synchronized(clientWriters) {
                     clientWriters.forEach { it.println(message) }
@@ -167,6 +177,7 @@ object NetworkManager {
      * Beendet alle Verbindungen sauber.
      */
     fun closeConnection() {
+        messageCallback = null
         synchronized(listenJobs) {
             listenJobs.forEach { it.cancel() }
             listenJobs.clear()
