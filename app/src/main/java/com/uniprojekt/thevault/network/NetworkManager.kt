@@ -58,12 +58,19 @@ object NetworkManager {
             messageCallback = onMessageReceived
             onStatusUpdate("Server-Knoten initiiert. Warte auf Agenten...")
             val serverSocket = ServerSocket(PORT)
-            Log.d(TAG, "HOST: ServerSocket auf Port $PORT geoeffnet")
+            
             // Loop, um mehrere Clients zu akzeptieren
             while (clientSockets.size < 3) {
                 val socket = serverSocket.accept()
                 val clientIp = socket.inetAddress.hostAddress ?: "unknown_${clientSockets.size}"
+
+                if (clientWritersMap.containsKey(clientIp)) {
+                    Log.d(TAG, "HOST: doppelte Verbindung von $clientIp -> abgelehnt")
+                    socket.close()
+                    continue
+                }
                 Log.d(TAG, "HOST: Verbindung akzeptiert von $clientIp")
+
                 clientSockets.add(socket)
                 
                 val writer = PrintWriter(socket.getOutputStream(), true)
@@ -121,7 +128,9 @@ object NetworkManager {
             Log.d(TAG, "CLIENT: verbunden mit $hostIp:$PORT, sende 'Hello Vault'")
             clientWriter?.println("Hello Vault")
             val response = reader.readLine()
+
             Log.d(TAG, "CLIENT: Host-Antwort: '$response'")
+
             if (response == "Access Granted") {
                 onStatusUpdate("Handshake erfolgreich. Zugriff gewährt.")
                 onHandshakeDone(true)

@@ -109,6 +109,8 @@ class GameViewModel : ViewModel() {
     private val _archivedStats = MutableStateFlow<List<HeistStat>>(emptyList())
     val archivedStats: StateFlow<List<HeistStat>> = _archivedStats.asStateFlow()
 
+    private var isConnecting = false
+
     // AI-Generated: Immersive Android System Notification Overload Game
     /**
      * Wählt zufällig einen Target Node und generiert den Golden Key.
@@ -282,6 +284,8 @@ class GameViewModel : ViewModel() {
     }
 
     fun joinGame(ip: String) {
+        if (_isConnected.value || isConnecting) return
+        isConnecting = true
         isHost = false
         _showScanner.value = false
         viewModelScope.launch {
@@ -290,6 +294,7 @@ class GameViewModel : ViewModel() {
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success ->
                     Log.d("VaultVM", "CLIENT Handshake success=$success")
+                    isConnecting = false
                     _isConnected.value = success
                     if (success) {
                         val profile = _localPlayer.value
@@ -503,7 +508,9 @@ class GameViewModel : ViewModel() {
             // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
             // Spieler geht lokal sofort in den Warten-Modus für bessere UX
             _gameState.value = GameState.WaitingForTeam(currentState.index + 1, currentState.name)
+
             Log.d("VaultVM", "completeCurrentMinigame index=${currentState.index} '${currentState.name}' -> MINIGAME_READY")
+
             // Signal an den Host (via Loopback falls man selbst Host ist)
             NetworkManager.sendMessage("MINIGAME_READY", useLoopback = true)
         }
@@ -734,7 +741,6 @@ class GameViewModel : ViewModel() {
         }
 
         WearDebugSignalHandler.setListener { command ->
-            Log.d("VaultVM", "Wear-Debug-Command empfangen: $command")
             when (command) {
                 "BYPASS_NODE" -> debugCompleteForTeam()
                 "ALARM_TEST" -> addError()
