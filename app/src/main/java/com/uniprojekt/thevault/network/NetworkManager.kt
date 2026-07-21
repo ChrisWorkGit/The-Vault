@@ -63,6 +63,13 @@ object NetworkManager {
             while (clientSockets.size < 3) {
                 val socket = serverSocket.accept()
                 val clientIp = socket.inetAddress.hostAddress ?: "unknown_${clientSockets.size}"
+
+                if (clientWritersMap.containsKey(clientIp)) {
+                    Log.d(TAG, "HOST: doppelte Verbindung von $clientIp -> abgelehnt")
+                    socket.close()
+                    continue
+                }
+
                 clientSockets.add(socket)
                 
                 val writer = PrintWriter(socket.getOutputStream(), true)
