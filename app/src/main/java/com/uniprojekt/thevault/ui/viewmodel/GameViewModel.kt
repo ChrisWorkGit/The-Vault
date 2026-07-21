@@ -108,6 +108,8 @@ class GameViewModel : ViewModel() {
     private val _archivedStats = MutableStateFlow<List<HeistStat>>(emptyList())
     val archivedStats: StateFlow<List<HeistStat>> = _archivedStats.asStateFlow()
 
+    private var isConnecting = false
+
     // AI-Generated: Immersive Android System Notification Overload Game
     /**
      * Wählt zufällig einen Target Node und generiert den Golden Key.
@@ -279,6 +281,8 @@ class GameViewModel : ViewModel() {
     }
 
     fun joinGame(ip: String) {
+        if (_isConnected.value || isConnecting) return
+        isConnecting = true
         isHost = false
         _showScanner.value = false
         viewModelScope.launch {
@@ -286,6 +290,7 @@ class GameViewModel : ViewModel() {
                 hostIp = ip,
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success ->
+                    isConnecting = false
                     _isConnected.value = success
                     if (success) {
                         val profile = _localPlayer.value
