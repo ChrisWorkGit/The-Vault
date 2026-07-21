@@ -1,6 +1,7 @@
 // PROMPT-REFERENZ: [REF-ISSUE37-RENAME-AGENT-FIX]
 package com.uniprojekt.thevault.data
 
+import android.util.Log
 import com.uniprojekt.thevault.data.dao.HeistStatDao
 import com.uniprojekt.thevault.data.dao.PlayerProfileDao
 import com.uniprojekt.thevault.data.dao.VaultDao
@@ -29,11 +30,14 @@ class VaultRepository(
      * Nutzt die eindeutige ID zur Identifizierung, um Duplikate beim Umbenennen zu vermeiden.
      */
     suspend fun saveOrUpdateProfile(profile: PlayerProfile) {
+        Log.d("VaultRepo", "saveOrUpdateProfile(id=${profile.playerId}, name='${profile.name}')")
         playerProfileDao.insertOrUpdate(profile)
     }
 
     suspend fun getProfileById(id: String): PlayerProfile? {
-        return playerProfileDao.getProfileById(id)
+        val result = playerProfileDao.getProfileById(id)
+        Log.d("VaultRepo", "getProfileById(id=$id) -> ${result?.name ?: "null"}")
+        return result
     }
 
     /** Stream aller bisherigen Spielsessions inklusive Ergebnisse. */
@@ -46,11 +50,12 @@ class VaultRepository(
     val bestHeistStats: Flow<List<HeistStat>> = heistStatDao.getBestStatsOrderedByTime()
 
     /**
-     * Speichert eine vollständige Session ab. 
+     * Speichert eine vollständige Session ab.
      * Verknüpft automatisch die Minigame-Ergebnisse mit der generierten Session-ID.
      */
     suspend fun saveFullSession(session: GameSession, results: List<MinigameResult>) {
         val sessionId = vaultDao.insertSession(session)
+        Log.d("VaultRepo", "saveFullSession sessionId=$sessionId results=${results.size}")
         val resultsWithSessionId = results.map { it.copy(sessionId = sessionId) }
         vaultDao.insertMinigameResults(resultsWithSessionId)
     }
@@ -59,6 +64,7 @@ class VaultRepository(
      * Speichert eine Heist-Statistik ab.
      */
     suspend fun insertHeistStat(stat: HeistStat) {
+        Log.d("VaultRepo", "insertHeistStat(win=${stat.isVictory}, dauer=${stat.totalDurationSeconds}s)")
         heistStatDao.insertStat(stat)
     }
 
@@ -66,6 +72,7 @@ class VaultRepository(
      * Löscht eine Heist-Statistik.
      */
     suspend fun deleteHeistStat(id: Long) {
+        Log.d("VaultRepo", "deleteHeistStat(id=$id)")
         heistStatDao.deleteStatById(id)
     }
 }

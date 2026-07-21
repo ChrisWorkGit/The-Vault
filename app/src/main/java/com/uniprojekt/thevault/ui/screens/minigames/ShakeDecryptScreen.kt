@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -63,11 +64,13 @@ fun ShakeDecryptScreen(
 
     DisposableEffect(hasSensor) {
         if (!hasSensor) {
+            Log.d("ShakeDecrypt", "kein Sensor -> Fallback, onReady()")
             onReady() // Auch ohne Sensor bereit
             return@DisposableEffect onDispose { }
         }
 
         // AI-Generated: Signalisiere Bereitschaft sofort beim Laden
+        Log.d("ShakeDecrypt", "Sensor registriert threshold=$SHAKE_THRESHOLD -> onReady()")
         onReady()
 
         val listener = object : SensorEventListener {
@@ -83,8 +86,10 @@ fun ShakeDecryptScreen(
                 if (gForce > SHAKE_THRESHOLD && now - lastShakeTime > MIN_SHAKE_INTERVALS_MS) {
                     lastShakeTime = now
                     progress = (progress + PROGRESS_PER_SHAKE).coerceAtMost(1f)
+                    Log.d("ShakeDecrypt", "Shake gForce=$gForce progress=$progress")
                     if (progress >= 1f) {
                         isComplete = true
+                        Log.d("ShakeDecrypt", "100% -> isComplete=true")
                     }
                 }
             }
@@ -101,6 +106,7 @@ fun ShakeDecryptScreen(
 
     LaunchedEffect(isComplete) {
         if (isComplete) {
+            Log.d("ShakeDecrypt", "onComplete()")
             delay(800)
             onComplete()
         }

@@ -58,11 +58,12 @@ object NetworkManager {
             messageCallback = onMessageReceived
             onStatusUpdate("Server-Knoten initiiert. Warte auf Agenten...")
             val serverSocket = ServerSocket(PORT)
-            
+            Log.d(TAG, "HOST: ServerSocket auf Port $PORT geoeffnet")
             // Loop, um mehrere Clients zu akzeptieren
             while (clientSockets.size < 3) {
                 val socket = serverSocket.accept()
                 val clientIp = socket.inetAddress.hostAddress ?: "unknown_${clientSockets.size}"
+                Log.d(TAG, "HOST: Verbindung akzeptiert von $clientIp")
                 clientSockets.add(socket)
                 
                 val writer = PrintWriter(socket.getOutputStream(), true)
@@ -75,6 +76,7 @@ object NetworkManager {
                 
                 // Handshake: Warte auf Nachricht vom Client
                 val message = reader.readLine()
+                Log.d(TAG, "HOST: Handshake von $clientIp: '$message'")
                 if (message == "Hello Vault") {
                     writer.println("Access Granted") // Bestätigung an Client senden
                     
@@ -84,6 +86,7 @@ object NetworkManager {
                     // Initialer Handshake pro Client erfolgreich
                     onHandshakeDone(true)
                 } else {
+                    Log.d(TAG, "HOST: ungueltiger Handshake von $clientIp -> verworfen")
                     socket.close()
                     clientSockets.remove(socket)
                     clientWriters.remove(writer)
@@ -115,9 +118,10 @@ object NetworkManager {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
 
             // Handshake
+            Log.d(TAG, "CLIENT: verbunden mit $hostIp:$PORT, sende 'Hello Vault'")
             clientWriter?.println("Hello Vault")
             val response = reader.readLine()
-            
+            Log.d(TAG, "CLIENT: Host-Antwort: '$response'")
             if (response == "Access Granted") {
                 onStatusUpdate("Handshake erfolgreich. Zugriff gewährt.")
                 onHandshakeDone(true)
@@ -139,11 +143,14 @@ object NetworkManager {
             try {
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
+                    Log.d(TAG, "RX von '$senderId': '${line?.take(120)}'")
                     line?.let { onMessageReceived(it, senderId) }
                 }
+                Log.d(TAG, "Stream von '$senderId' regulaer beendet")
             } catch (e: Exception) {
                 Log.e(TAG, "Stream unterbrochen von $senderId", e)
             } finally {
+                Log.d(TAG, "Listener '$senderId' beendet -> CONNECTION_LOST_FROM:$senderId")
                 // AI-Generated: Real Device Connection & Sync Patch
                 // Informiere das ViewModel über den spezifischen Abbruch dieser Verbindung
                 onMessageReceived("CONNECTION_LOST_FROM:$senderId", senderId)
@@ -158,6 +165,7 @@ object NetworkManager {
      */
     fun sendMessage(message: String, useLoopback: Boolean = false) {
         CoroutineScope(Dispatchers.IO).launch {
+            Log.d(TAG, "TX isHost=$isHost loopback=$useLoopback clients=${clientWriters.size} msg='${message.take(120)}'")
             // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback Handling
             if (useLoopback) {
                 messageCallback?.invoke(message, "LOCAL_LOOPBACK")
@@ -168,6 +176,7 @@ object NetworkManager {
                     clientWriters.forEach { it.println(message) }
                 }
             } else {
+                if (clientWriter == null) Log.d(TAG, "TX WARN: clientWriter==null, Nachricht verworfen")
                 clientWriter?.println(message)
             }
         }
@@ -177,6 +186,7 @@ object NetworkManager {
      * Beendet alle Verbindungen sauber.
      */
     fun closeConnection() {
+        Log.d(TAG, "closeConnection() isHost=$isHost clients=${clientSockets.size}")
         messageCallback = null
         synchronized(listenJobs) {
             listenJobs.forEach { it.cancel() }

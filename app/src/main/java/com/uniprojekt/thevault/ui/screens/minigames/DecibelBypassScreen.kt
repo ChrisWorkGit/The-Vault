@@ -10,6 +10,7 @@ import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.media.ToneGenerator
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
@@ -96,6 +97,7 @@ fun DecibelBypassScreen(
 
     // Permission Launcher
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        Log.d("DecibelBypass", "RECORD_AUDIO granted=$granted")
         hasPermission = granted
     }
 
@@ -139,9 +141,11 @@ fun DecibelBypassScreen(
                         // Schwellenwert für Alarm-Erkennung (Partner hat Fehler gemacht)
                         if (maxAmp > 25000) { 
                             val now = System.currentTimeMillis()
+                            Log.d("DecibelBypass", "MIC ueber Schwelle maxAmp=${maxAmp.toInt()} (>25000) inGrace=${now - lastErrorTimestamp <= gracePeriodMs}")
                             if (now - lastErrorTimestamp > gracePeriodMs) {
                                 withContext(Dispatchers.Main) {
                                     errors++
+                                    Log.d("DecibelBypass", "Mic-Alarm gewertet errors=$errors/$maxErrors")
                                     onMistake()
                                     lastErrorTimestamp = now
                                     // Kurzer visueller Feedback-Effekt hier möglich
@@ -177,6 +181,7 @@ fun DecibelBypassScreen(
                 while (errors < maxErrors) {
                     val now = System.currentTimeMillis()
                     if (now - lastMovementTime > 4000L) {
+                        Log.d("DecibelBypass", "Inaktivitaet >4s -> Alarm errors=${errors + 1}/$maxErrors")
                         triggerAlarm()
                         errors++
                         onMistake()
@@ -212,14 +217,17 @@ fun DecibelBypassScreen(
                 val now = System.currentTimeMillis()
                 
                 // Nur Fehler triggern, wenn außerhalb der Toleranz UND nach der Gnadenfrist (Grace Period)
+                Log.d("DecibelBypass", "Antiphase target=$targetAmp player=$smoothedPlayerAmplitude diff=$diff (tol=$toleranceThreshold)")
                 if (diff > toleranceThreshold && (now - lastErrorTimestamp > gracePeriodMs)) {
                     triggerAlarm()
                     errors++
+                    Log.d("DecibelBypass", "Antiphase-Fehler errors=$errors/$maxErrors")
                     onMistake()
                     lastErrorTimestamp = now
                 }
             }
             // Bei zu vielen Fehlern wurde die Schleife beendet
+            Log.d("DecibelBypass", "maxErrors erreicht ($errors/$maxErrors) -> onFail()")
             onFail()
         }
     }
@@ -230,6 +238,7 @@ fun DecibelBypassScreen(
     LaunchedEffect(isPhaseActive) {
         if (isPhaseActive) {
             delay(30000)
+            Log.d("DecibelBypass", "30s vorbei errors=$errors/$maxErrors -> ${if (errors < maxErrors) "onComplete" else "kein Sieg"}")
             if (errors < maxErrors) {
                 onComplete()
             }

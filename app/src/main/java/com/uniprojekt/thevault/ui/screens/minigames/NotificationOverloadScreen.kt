@@ -12,6 +12,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -71,19 +72,26 @@ fun NotificationOverloadScreen(
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted -> hasPermission = isGranted }
+    ) { isGranted ->
+        Log.d("NotificationOverload", "POST_NOTIFICATIONS granted=$isGranted")
+        hasPermission = isGranted
+    }
 
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
+            Log.d("NotificationOverload", "onReady() (init)")
             onReady()
         }
         createNotificationChannel(context)
     }
 
     LaunchedEffect(hasPermission) {
-        if (hasPermission) onReady()
+        if (hasPermission) {
+            Log.d("NotificationOverload", "onReady() (hasPermission)")
+            onReady()
+        }
     }
 
     DisposableEffect(Unit) {
@@ -91,8 +99,12 @@ fun NotificationOverloadScreen(
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (isCompleted || !isGameActive) return
                 when (intent?.action) {
-                    ACTION_GOLDEN_KEY -> onSuccess()
+                    ACTION_GOLDEN_KEY -> {
+                        Log.d("NotificationOverload", "GOLDEN_KEY angeklickt -> onSuccess()")
+                        onSuccess()
+                    }
                     ACTION_KEY_DISMISSED -> {
+                        Log.d("NotificationOverload", "GOLDEN_KEY weggewischt -> onFail()")
                         // AI-Generated: Game fails if the Golden Key is swiped away
                         onFail()
                     }
@@ -178,6 +190,7 @@ private fun NeuralRelayUI(
         if (isCompleted) return@LaunchedEffect
         delay(30000)
         if (!isCompleted) {
+            Log.d("NotificationOverload", "NeuralRelay 30s ueberlebt -> onSuccess()")
             onSuccess() // Erfolgreich überlebt
         }
     }
@@ -193,6 +206,7 @@ private fun NeuralRelayUI(
 
             // AI-Generated: Trigger failure if buffer overflows
             if (currentNotifs >= 10) {
+                Log.d("NotificationOverload", "NeuralRelay buffer overflow activeNotifs=$currentNotifs -> onFail()")
                 onFail()
                 break
             }
@@ -280,7 +294,10 @@ private fun TargetNodeUI(
     LaunchedEffect(isCompleted) {
         if (isCompleted) return@LaunchedEffect
         delay(30000)
-        if (!isCompleted) onSuccess()
+        if (!isCompleted) {
+            Log.d("NotificationOverload", "TargetNode 30s ueberlebt -> onSuccess()")
+            onSuccess()
+        }
     }
 
     LaunchedEffect(hasPermission, isCompleted) {
@@ -289,7 +306,7 @@ private fun TargetNodeUI(
             val currentNotifs = notificationManager.activeNotifications
                 .count { it.tag?.startsWith(NOTIF_TAG_PREFIX) == true }
             activeNotifs = currentNotifs
-            if (currentNotifs >= 10) { onFail(); break }
+            if (currentNotifs >= 10) { Log.d("NotificationOverload", "TargetNode buffer overflow activeNotifs=$currentNotifs -> onFail()"); onFail(); break }
             val isGolden = Random.nextInt(100) < 20
             val id = Random.nextInt(1000, 9999)
             val tag = if (isGolden) "${NOTIF_TAG_PREFIX}GOLDEN" else "${NOTIF_TAG_PREFIX}$id"
@@ -344,6 +361,7 @@ private fun sendNotification(context: Context, notificationManager: Notification
         .setAutoCancel(true)
 
     if (isGolden) {
+        Log.d("NotificationOverload", "GOLDEN Notification gesendet tag=$tag text='$text'")
         builder.setContentIntent(clickPendingIntent)
         builder.setDeleteIntent(deletePendingIntent)
     }

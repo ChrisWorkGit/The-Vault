@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -80,12 +81,14 @@ fun LaserBarrierScreen(
 
     DisposableEffect(hasSensor) {
         onReady()
+        Log.d("LaserBarrier", "onReady() hasSensor=$hasSensor luxThreshold=$LUX_THRESHOLD")
 
         if (!hasSensor) return@DisposableEffect onDispose { }
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 currentLux = event.values[0]
+                Log.d("LaserBarrier", "lux=$currentLux (threshold=$LUX_THRESHOLD)")
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
@@ -107,6 +110,7 @@ fun LaserBarrierScreen(
                 holdProgress = (elapsed.toFloat() / HOLD_TO_SOLVE_MS).coerceAtMost(1f)
                 if (elapsed >= HOLD_TO_SOLVE_MS) {
                     isSolved = true
+                    Log.d("LaserBarrier", "dunkel gehalten -> isSolved=true")
                     break
                 }
             } else {
@@ -119,6 +123,7 @@ fun LaserBarrierScreen(
 
     LaunchedEffect(isSolved) {
         if (isSolved) {
+            Log.d("LaserBarrier", "onComplete()")
             delay(800)
             onComplete()
         }

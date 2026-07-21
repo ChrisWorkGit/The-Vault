@@ -8,6 +8,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -97,6 +98,7 @@ fun GyroLockScreen(
 
     DisposableEffect(hasSensor) {
         onReady()
+        Log.d("GyroLock", "onReady() hasSensor=$hasSensor targets=$targets")
 
         if (!hasSensor) return@DisposableEffect onDispose { }
 
@@ -146,8 +148,10 @@ fun GyroLockScreen(
                 if (elapsed >= HOLD_TO_LOCK_MS) {
                     lockedCount = activeTargetIndex + 1
                     holdProgress = 0f
+                    Log.d("GyroLock", "Ziffer $target eingerastet (${lockedCount}/${targets.size}) dialAngle=$dialAngleDeg")
                     if (activeTargetIndex >= targets.lastIndex) {
                         isSolved = true
+                        Log.d("GyroLock", "alle Ziele erreicht -> isSolved=true")
                     } else {
                         activeTargetIndex += 1
                     }
@@ -163,6 +167,7 @@ fun GyroLockScreen(
 
     LaunchedEffect(isSolved) {
         if (isSolved) {
+            Log.d("GyroLock", "onComplete()")
             delay(800)
             onComplete()
         }

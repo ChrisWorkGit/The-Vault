@@ -7,6 +7,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -121,6 +122,7 @@ fun LockpickScreen(
 
         // AI-Generated: Signalisiere Bereitschaft sofort beim Laden
         onReady()
+        Log.d("Lockpick", "onReady() hasSensor=$hasSensor")
 
         var pitch0 = 0f
         val rotationMatrix = FloatArray(9)
@@ -139,6 +141,7 @@ fun LockpickScreen(
                     // Aktuelle Neigung des Geräts wird als "Neutralstellung" definiert
                     pitch0 = pitchDeg
                     calibrated = true
+                    Log.d("Lockpick", "kalibriert pitch0=$pitch0")
                     return
                 }
 
@@ -173,9 +176,11 @@ fun LockpickScreen(
                 if (elapsed >= HOLD_TO_LOCK_MS) {
                     pins[activePinIndex] = pin.copy(isLocked = true)
                     holdProgress = 0f
+                    Log.d("Lockpick", "Pin $activePinIndex eingerastet leverDeg=$leverDeg")
 
                     if (activePinIndex == 0) {
                         allLocked = true
+                        Log.d("Lockpick", "alle Pins -> allLocked=true")
                     } else {
                         leverDeg = 0f
                         activePinIndex -= 1
@@ -192,6 +197,7 @@ fun LockpickScreen(
 
     LaunchedEffect(allLocked) {
         if (allLocked) {
+            Log.d("Lockpick", "onComplete()")
             delay(800)
             onComplete()
         }

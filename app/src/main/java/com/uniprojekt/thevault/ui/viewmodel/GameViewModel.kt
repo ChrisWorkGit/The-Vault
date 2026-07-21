@@ -7,6 +7,7 @@
 package com.uniprojekt.thevault.ui.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.uniprojekt.thevault.data.VaultRepository
@@ -249,6 +250,7 @@ class GameViewModel : ViewModel() {
     }
 
     private fun updateLobbyState() {
+        Log.d("VaultVM", "updateLobbyState isHost=$isHost players=${_players.value.size} state=${_gameState.value}")
         // Der Host wechselt erst in die Lobby, wenn mindestens ein Client verbunden ist.
         // Ein Client wechselt sofort nach erfolgreichem Handshake in die Lobby.
         if (isHost) {
@@ -271,6 +273,7 @@ class GameViewModel : ViewModel() {
             NetworkManager.startHost(
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success ->
+                    Log.d("VaultVM", "HOST Handshake success=$success")
                     _isConnected.value = success
                 },
                 onMessageReceived = { msg, sender -> handleNetworkMessage(msg, sender) }
@@ -286,6 +289,7 @@ class GameViewModel : ViewModel() {
                 hostIp = ip,
                 onStatusUpdate = { _networkStatus.value = it },
                 onHandshakeDone = { success ->
+                    Log.d("VaultVM", "CLIENT Handshake success=$success")
                     _isConnected.value = success
                     if (success) {
                         val profile = _localPlayer.value
@@ -299,6 +303,7 @@ class GameViewModel : ViewModel() {
     }
 
     private fun handleNetworkMessage(message: String, senderId: String?) {
+        Log.d("VaultVM", "RX isHost=$isHost sender=$senderId msg='${message.take(120)}'")
         when {
             message.startsWith("UPDATE_PLAYER_NAME:") -> {
                 if (isHost) {
@@ -348,6 +353,7 @@ class GameViewModel : ViewModel() {
                 }
             }
             message == "START_LEVEL_NOW" -> {
+                Log.d("VaultVM", "START_LEVEL_NOW empfangen -> isGameActive=true")
                 _isGameActive.value = true
             }
             message == "MINIGAME_READY" -> {
@@ -435,6 +441,7 @@ class GameViewModel : ViewModel() {
             setupNotificationOverload()
         }
 
+        Log.d("VaultVM", "startGame isHost=$isHost sequence=$activeMinigameSequence")
         startTimer()
     }
 
@@ -470,6 +477,7 @@ class GameViewModel : ViewModel() {
      * (z.B. Berechtigungen erteilt, Lautstärke ok).
      */
     fun reportReadyToStart() {
+        Log.d("VaultVM", "reportReadyToStart -> MEMBER_START_READY")
         // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Loopback für konsistente Host-Logik
         NetworkManager.sendMessage("MEMBER_START_READY", useLoopback = true)
     }
@@ -478,8 +486,10 @@ class GameViewModel : ViewModel() {
         if (isHost) {
             synchronized(startReadyPlayers) {
                 startReadyPlayers.add(senderId)
+                Log.d("VaultVM", "START-SYNC $senderId -> ${startReadyPlayers.size}/${_players.value.size} bereit")
                 if (startReadyPlayers.size >= _players.value.size) {
                     startReadyPlayers.clear()
+                    Log.d("VaultVM", "START-SYNC alle bereit -> START_LEVEL_NOW")
                     // Alle sind bereit -> Level-Start Kommando an alle (inkl. Loopback)
                     NetworkManager.sendMessage("START_LEVEL_NOW", useLoopback = true)
                 }
@@ -493,7 +503,7 @@ class GameViewModel : ViewModel() {
             // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
             // Spieler geht lokal sofort in den Warten-Modus für bessere UX
             _gameState.value = GameState.WaitingForTeam(currentState.index + 1, currentState.name)
-            
+            Log.d("VaultVM", "completeCurrentMinigame index=${currentState.index} '${currentState.name}' -> MINIGAME_READY")
             // Signal an den Host (via Loopback falls man selbst Host ist)
             NetworkManager.sendMessage("MINIGAME_READY", useLoopback = true)
         }
@@ -503,6 +513,7 @@ class GameViewModel : ViewModel() {
         if (isHost) {
             synchronized(readyPlayers) {
                 readyPlayers.add(senderId)
+                Log.d("VaultVM", "COMPLETE-SYNC $senderId -> ${readyPlayers.size}/${_players.value.size} fertig")
                 checkAllPlayersReady()
             }
         }
@@ -511,6 +522,7 @@ class GameViewModel : ViewModel() {
     private fun checkAllPlayersReady() {
         if (isHost) {
             // Wir prüfen gegen die aktuelle Anzahl der Sockets + 1 (Host)
+            Log.d("VaultVM", "checkAllPlayersReady ${readyPlayers.size}/${_players.value.size}")
             if (readyPlayers.size >= _players.value.size) {
                 readyPlayers.clear()
 
@@ -518,14 +530,18 @@ class GameViewModel : ViewModel() {
                 // Alle fertig -> Trigger an alle (inkl. Loopback für den Host selbst)
                 viewModelScope.launch {
                     delay(400) // Cooldown für physische Geräte-Synchronisation
+                    Log.d("VaultVM", "alle fertig -> COMPLETE_MINIGAME_TRIGGER")
                     NetworkManager.sendMessage("COMPLETE_MINIGAME_TRIGGER", useLoopback = true)
                 }
+            } else {
+                Log.d("VaultVM", "COMPLETE-SYNC warte auf ${_players.value.size - readyPlayers.size} Spieler")
             }
         }
     }
 
     private fun proceedToNextMinigame() {
         val currentState = _gameState.value
+        Log.d("VaultVM", "proceedToNextMinigame currentState=$currentState")
         val currentIndex = when (currentState) {
             is GameState.Playing -> currentState.index
             is GameState.WaitingForTeam -> currentState.nextIndex - 1
@@ -533,6 +549,7 @@ class GameViewModel : ViewModel() {
         }
 
         val nextIndex = currentIndex + 1
+        Log.d("VaultVM", "proceedToNextMinigame currentIndex=$currentIndex nextIndex=$nextIndex size=${activeMinigameSequence.size}")
         // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Reset der Bereit-Listen für das nächste Minispiel
         _isGameActive.value = false
         startReadyPlayers.clear()
@@ -558,6 +575,7 @@ class GameViewModel : ViewModel() {
     }
 
     private fun finishHeist(isWin: Boolean, reason: String? = null) {
+        Log.d("VaultVM", "finishHeist isWin=$isWin reason=$reason dauer=${_timerSeconds.value}s fehler=${_totalErrors.value}")
         stopTimer()
         _isGameActive.value = false
         if (isHost) {
@@ -646,6 +664,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun triggerGameOver(isWin: Boolean, reason: String? = null, stat: HeistStat? = null) {
+        Log.d("VaultVM", "triggerGameOver isWin=$isWin reason=$reason")
         stopTimer()
         _gameState.value = GameState.GameOver(isWin, reason, stat)
     }
@@ -669,6 +688,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun resetToLobby() {
+        Log.d("VaultVM", "resetToLobby isHost=$isHost")
         stopTimer()
         // AI-Generated: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX] - Reset aller spielbezogenen States
         _isGameActive.value = false
@@ -695,6 +715,7 @@ class GameViewModel : ViewModel() {
      * // AI-Generated: Wear OS Companion App & Wrist Debug Terminal
      */
     fun startWearSync(context: Context) {
+        Log.d("VaultVM", "startWearSync -> Wear-Monitoring gestartet")
         WearSyncManager.startMonitoring(context)
         viewModelScope.launch {
             combine(_timerSeconds, _gameState, _totalErrors, _isGameActive) { timer, state, errors, active ->
@@ -707,12 +728,13 @@ class GameViewModel : ViewModel() {
                 }
                 val mistakesText = "$errors/3"
                 val timeText = formatTime(timer)
-                
+
                 WearSyncManager.syncGameState(context.applicationContext, timeText, statusText, mistakesText, active)
             }.collect {}
         }
 
         WearDebugSignalHandler.setListener { command ->
+            Log.d("VaultVM", "Wear-Debug-Command empfangen: $command")
             when (command) {
                 "BYPASS_NODE" -> debugCompleteForTeam()
                 "ALARM_TEST" -> addError()

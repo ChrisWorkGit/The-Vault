@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -104,6 +105,7 @@ fun RotationLockScreen(
 
     DisposableEffect(hasSensor) {
         onReady()
+        Log.d("RotationLock", "onReady() hasSensor=$hasSensor sweetAngle=$sweetAngleDeg")
         if (!hasSensor) return@DisposableEffect onDispose { }
 
         var rollNeutral = 0f
@@ -122,6 +124,7 @@ fun RotationLockScreen(
                 if (!calibrated) {
                     rollNeutral = rollDeg
                     calibrated = true
+                    Log.d("RotationLock", "kalibriert rollNeutral=$rollNeutral")
                     return
                 }
 
@@ -151,6 +154,7 @@ fun RotationLockScreen(
             if (curAllowed >= 1f && tensionFrac >= SUCCESS_FRAC) {
                 stress = 0f
                 isSolved = true
+                Log.d("RotationLock", "GELOEST pick=$pickAngleDeg sweet=$sweetAngleDeg tension=$tensionFrac")
                 continue
             }
 
@@ -167,8 +171,10 @@ fun RotationLockScreen(
                 attemptsLeft -= 1
                 stress = 0f
                 tensionFrac = 0f
+                Log.d("RotationLock", "Dietrich gebrochen verbleibend=$attemptsLeft pick=$pickAngleDeg sweet=$sweetAngleDeg")
                 if (attemptsLeft <= 0) {
                     isFailed = true
+                    Log.d("RotationLock", "alle Dietriche gebrochen -> isFailed=true")
                 }
             }
 
@@ -178,6 +184,7 @@ fun RotationLockScreen(
 
     LaunchedEffect(isSolved) {
         if (isSolved) {
+            Log.d("RotationLock", "onComplete()")
             delay(800)
             onComplete()
         }
@@ -185,6 +192,7 @@ fun RotationLockScreen(
 
     LaunchedEffect(isFailed) {
         if (isFailed) {
+            Log.d("RotationLock", "onFail()")
             delay(800)
             onFail()
         }
