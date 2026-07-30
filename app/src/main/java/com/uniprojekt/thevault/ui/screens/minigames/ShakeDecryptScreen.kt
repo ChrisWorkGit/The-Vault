@@ -1,3 +1,4 @@
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.content.Context
@@ -5,14 +6,20 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.uniprojekt.thevault.ui.theme.CyberBackground
+import com.uniprojekt.thevault.ui.theme.NeonGreen
+import com.uniprojekt.thevault.ui.theme.WaitingForTeamOverlay
+import com.uniprojekt.thevault.ui.theme.crtOverlay
 import kotlinx.coroutines.delay
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -115,41 +122,56 @@ fun ShakeDecryptScreen(
         }.joinToString("")
     }
 
-    Column(
+    // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(CyberBackground)
+            .crtOverlay()
     ) {
-        Text(text = "Code entschlüsseln", fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "Schüttle das Handy so schnell wie möglich!", fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = displayedCode,
-            fontSize = 48.sp,
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth(0.7f)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = "${(progress * 100).toInt()}% entschlüsselt")
-
-        if (!hasSensor) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(text = "Kein Bewegungssensor gefunden.")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = "Code entschlüsseln", fontSize = 18.sp, color = NeonGreen)
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = {
-                if (!isComplete && isGameActive) {
-                    progress = (progress + PROGRESS_PER_SHAKE).coerceAtMost(1f)
-                    if (progress >= 1f) isComplete = true
+            Text(text = "Schüttle das Handy so schnell wie möglich!", fontSize = 14.sp, color = Color.White)
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = displayedCode,
+                fontSize = 48.sp,
+                color = NeonGreen
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(0.7f),
+                color = NeonGreen,
+                trackColor = Color.DarkGray
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "${(progress * 100).toInt()}% entschlüsselt", color = Color.White)
+
+            if (!hasSensor) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(text = "Kein Bewegungssensor gefunden.", color = Color.Red)
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = {
+                    if (!isComplete && isGameActive) {
+                        progress = (progress + PROGRESS_PER_SHAKE).coerceAtMost(1f)
+                        if (progress >= 1f) isComplete = true
+                    }
+                }) {
+                    Text(text = "Schütteln simulieren")
                 }
-            }) {
-                Text(text = "Schütteln simulieren")
             }
+        }
+
+        if (!isGameActive) {
+            WaitingForTeamOverlay()
         }
     }
 }

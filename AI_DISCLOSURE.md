@@ -574,3 +574,49 @@ Identifikation der Race-Conditions beim Testen mit mehreren Emulatoren/Geräten.
 
 #### Erbrachte Eigenleistung des Teams nach Generierung:
 Das Team definierte die "Capability"-Strategie (`the_vault_wear_app`), um eine zuverlässige Erkennung der aktiven Watch-App zu ermöglichen. Nach der Generierung wurden die runden Display-Constraints optimiert und die Standby-Logik verfeinert, damit die Uhr im Alltag nicht ablenkt. Zudem wurden die Icons (Adaptive Icons für Wear) und die P2P-Befehlsstruktur für das Debug-Menü manuell an die bestehende State Machine angepasst.
+
+### 🔹 Referenz: [REF-ISSUE47-MINIGAME-BUGS-FIX]
+* **Datum:** 20.07.2026
+* **Genutztes Tool:** Gemini (Android Studio AI Plugin)
+* **Betroffene Dateien:**
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/DecibelBypassScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/NotificationOverloadScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/ShakeDecryptScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/LockpickScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/GyroLockScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/LaserBarrierScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/minigames/RotationLockScreen.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/theme/CyberpunkUI.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/viewmodel/GameViewModel.kt`
+    * `app/src/main/java/com/uniprojekt/thevault/ui/screens/MainApp.kt`
+* **Inhalt/Ziel:** Behebung kritischer Gameplay-Bugs, Implementierung eines globalen Berechtigungs-Gates und Schließen von Exploits in Minispielen.
+
+#### Verwendeter Prompt:
+> Lies und beachte strikt unsere Projekt-Richtlinien aus der Datei 'AI_RULES.txt'.
+> Die neue Referenz-ID für diese Aufgabe lautet: [REF-ISSUE47-MINIGAME-BUGS-FIX]
+>
+> KONTEXT:
+> Wir müssen mehrere kritische Gameplay- und Logik-Bugs in den verschiedenen Minispielen sowie der allgemeinen Berechtigungs-Prüfung beheben (Issue #47).
+>
+> AUFGABE:
+> Repariere die folgenden 4 Fehler in den entsprechenden Minispielen und Lifecycle-Handlern:
+>
+> 1. Globales Spiel-Start-Gate (Berechtigungen aller Spieler):
+>    - Stelle sicher, dass KEIN Minispiel die Gameplay-Schleife / den interaktiven Modus startet, solange nicht ALLE Spieler in der Lobby/Session die erforderlichen Android-Berechtigungen (z. B. Mikrofon, Benachrichtigungen, Sensoren) erteilt haben.
+>    - Die Minispiele müssen im Status "WAITING FOR PERMISSIONS" / "READY" blockiert bleiben, bis das entsprechende 'allPermissionsGranted'-Signal / Network-Event von allen Nodes empfangen wurde.
+>
+> 2. NotificationOverloadScreen Fixes:
+>    - Buffer-Ende: Fixe das Spielende. Sobald der Benachrichtigungs-Buffer / das Limit erreicht ist (Buffer voll oder Zeit abgelaufen), MUSS das Minispiel ordnungsgemäß als erfolgreich abgeschlossen (`onSuccess`) bzw. fehlgeschlagen beendet werden, statt in einer Endlosschleife zu hängen.
+>    - Anonymisierung der Benachrichtigungstitel: Ändere die Benachrichtigungstitel/Absender im Notification Overload Game. Alle Benachrichtigungen sollen denselben generischen System-Namen tragen (z. B. "SYSTEM_ALERT" oder "VAULT_SECURITY"), sodass die richtige Benachrichtigung NICHT mehr am Namen erkennbar ist, sondern ausschließlich über den individuellen Code/Inhalt identifiziert werden muss.
+>
+> 3. DecibelBypassScreen Anti-Cheat Fix:
+>    - Behebe den Exploit, bei dem der Spieler seinen Finger einfach starr an einer Seite des Bildschirms / Reglers halten kann und das Spiel ohne Fehler durchläuft.
+>    - Implementiere eine dynamische Schwellenwert- / Bewegungs-Prüfung: Das Spiel muss fortlaufend aktive Interaktion verlangen (z. B. wechselnde Frequenz-Zielzonen, verlangte Finger-Bewegung / Anpassung an schwankenden Pegel oder Inaktivitäts-Penalty), damit stummes/statisches Halten als Fehler gewertet wird oder den Fortschritt stoppt.
+>
+> DENK AN DIE ENTWICKLUNGS-RICHTLINIEN AUS DER AI_RULES.txt:
+> - Kette die neue ID [REF-ISSUE47-MINIGAME-BUGS-FIX] im Datei-Header aller geänderten Dateien an.
+> - Nutze im neuen Code den Kommentar: // AI-Generated: Fix minigame lifecycle permissions, notification overload mechanics, and decibel bypass exploit
+> - Schreibe verständliche deutsche Inline-Kommentare zu den gefixten Logikstellen.   Weitere Änderungsanfragen ok passe noch an das beim waiting for partner nur der code für den notification overload angezeigt wird wenn man wirklich in dem minipsile ist ansonsten soll der natrlich nicht angezeigt werden
+
+#### Erbrachte Eigenleistung des Teams nach Generierung:
+Das Team validierte das neue `WaitingForTeamOverlay` auf physischen Geräten unterschiedlicher API-Level (insbesondere Android 13 für Benachrichtigungen). Zudem wurde die Sensitivität der Anti-Cheat-Bewegungserkennung (`3f` Delta) und des Timeouts (`4s`) durch Spieltests kalibriert, um Fehlalarme bei legitimen Spielzügen zu vermeiden. Die Erweiterung des `GameState` im ViewModel wurde manuell überprüft, um sicherzustellen, dass der `currentMinigameName` korrekt für das kontextsensitive UI-Feedback in der `MainApp` genutzt wird.

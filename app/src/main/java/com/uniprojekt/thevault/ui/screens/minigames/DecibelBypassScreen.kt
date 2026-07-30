@@ -1,4 +1,5 @@
 // PROMPT-REFERENZ: [REF-ISSUE05-DECIBEL-BYPASS]
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.Manifest
@@ -77,6 +78,9 @@ fun DecibelBypassScreen(
     var lastReactionTime by remember { mutableLongStateOf(0L) }
     var isPhaseActive by remember { mutableStateOf(false) }
     var micAmplitude by remember { mutableFloatStateOf(0f) }
+
+    // AI-Generated: Fix minigame lifecycle permissions, notification overload mechanics, and decibel bypass exploit
+    var lastMovementTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     // AI-Generated: Procedural Wave & Antiphase Feedback States
     var playerAmplitude by remember { mutableFloatStateOf(0f) }
@@ -168,6 +172,20 @@ fun DecibelBypassScreen(
 
     LaunchedEffect(isPhaseActive) {
         if (isPhaseActive) {
+            // AI-Generated: Anti-Cheat Inactivity Check Loop
+            launch {
+                while (errors < maxErrors) {
+                    val now = System.currentTimeMillis()
+                    if (now - lastMovementTime > 4000L) {
+                        triggerAlarm()
+                        errors++
+                        onMistake()
+                        lastMovementTime = now // Reset um Kaskaden zu vermeiden
+                    }
+                    delay(500)
+                }
+            }
+
             while (errors < maxErrors) {
                 // Zufällige organische Änderungen der Wellen-Charakteristik
                 delay(Random.nextLong(1500, 4000))
@@ -249,6 +267,9 @@ fun DecibelBypassScreen(
                     0
                 )
             }
+        } else if (!isGameActive) {
+            // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+            WaitingForTeamOverlay()
         } else {
             // Aktiver Spielbildschirm
             Column(
@@ -285,7 +306,14 @@ fun DecibelBypassScreen(
                                 },
                                 onDrag = { change, _ ->
                                     // Mapping: Finger-Y-Position zu relativer Amplitude zur Mitte
-                                    playerAmplitude = change.position.y - (boxHeight / 2f)
+                                    val newAmp = change.position.y - (boxHeight / 2f)
+                                    
+                                    // AI-Generated: Anti-Cheat Movement Check
+                                    if (abs(newAmp - playerAmplitude) > 3f) {
+                                        lastMovementTime = System.currentTimeMillis()
+                                    }
+                                    
+                                    playerAmplitude = newAmp
                                     // Low-Pass-Filter / Smoothing: Reduziert Micro-Jitter für stabilere Eingabe
                                     smoothedPlayerAmplitude = smoothedPlayerAmplitude * 0.7f + playerAmplitude * 0.3f
                                 },

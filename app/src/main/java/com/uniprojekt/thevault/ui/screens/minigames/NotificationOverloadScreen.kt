@@ -1,5 +1,6 @@
 // PROMPT-REFERENZ: [REF-ISSUE27-NOTIFICATION-OVERLOAD]
 // PROMPT-REFERENZ: [REF-ISSUE-SYNC-ANALYSIS-AND-FIX]
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.Manifest
@@ -33,6 +34,7 @@ import com.uniprojekt.thevault.ui.theme.CyberBackground
 import com.uniprojekt.thevault.ui.theme.DarkGreen
 import com.uniprojekt.thevault.ui.theme.NeonGreen
 import com.uniprojekt.thevault.ui.theme.TextGreen
+import com.uniprojekt.thevault.ui.theme.WaitingForTeamOverlay
 import com.uniprojekt.thevault.ui.theme.crtOverlay
 import com.uniprojekt.thevault.ui.theme.neonGlow
 import kotlinx.coroutines.delay
@@ -52,7 +54,9 @@ fun NotificationOverloadScreen(
     isCompleted: Boolean = false,
     onSuccess: () -> Unit,
     onFail: () -> Unit,
-    onMistake: () -> Unit
+    onMistake: () -> Unit,
+    onReady: () -> Unit = {},
+    isGameActive: Boolean = true
 ) {
     val context = LocalContext.current
     val notificationManager = remember { context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
@@ -72,14 +76,20 @@ fun NotificationOverloadScreen(
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasPermission) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            onReady()
         }
         createNotificationChannel(context)
+    }
+
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) onReady()
     }
 
     DisposableEffect(Unit) {
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (isCompleted) return
+                if (isCompleted || !isGameActive) return
                 when (intent?.action) {
                     ACTION_GOLDEN_KEY -> onSuccess()
                     ACTION_KEY_DISMISSED -> {
@@ -109,7 +119,22 @@ fun NotificationOverloadScreen(
             .crtOverlay(),
         contentAlignment = Alignment.Center
     ) {
-        if (role == "NEURAL_RELAY" && content != null) {
+        if (!hasPermission) {
+            // Permission Gate
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("NOTIFICATIONS REQUIRED", color = NeonGreen, fontFamily = FontFamily.Monospace)
+                androidx.compose.material3.Button(onClick = { 
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }) {
+                    Text("GRANT PERMISSION")
+                }
+            }
+        } else if (!isGameActive) {
+            // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+            WaitingForTeamOverlay()
+        } else if (role == "NEURAL_RELAY" && content != null) {
             val parts = content.split("|")
             if (parts.size >= 3) {
                 NeuralRelayUI(
@@ -119,12 +144,13 @@ fun NotificationOverloadScreen(
                     agentToHelp = parts[1],
                     keyToTellAgent = parts[2],
                     isCompleted = isCompleted,
-                    onFail = onFail
+                    onFail = onFail,
+                    onSuccess = onSuccess
                 )
             }
         } else if (role == "TARGET") {
             // Legacy/Debug Mode
-            TargetNodeUI(hasPermission, notificationManager, content ?: "", isCompleted, onFail)
+            TargetNodeUI(hasPermission, notificationManager, content ?: "", isCompleted, onFail, onSuccess)
         } else {
             AnalystUI(content ?: "SCANNING FOR UPLINK...", isCompleted)
         }
@@ -139,11 +165,22 @@ private fun NeuralRelayUI(
     agentToHelp: String,
     keyToTellAgent: String,
     isCompleted: Boolean,
-    onFail: () -> Unit
+    onFail: () -> Unit,
+    onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
     var activeNotifs by remember { mutableIntStateOf(0) }
     var speedFactor by remember { mutableStateOf(1.0f) }
+
+    // AI-Generated: Fix minigame lifecycle permissions, notification overload mechanics, and decibel bypass exploit
+    // 30s Mission Timer
+    LaunchedEffect(isCompleted) {
+        if (isCompleted) return@LaunchedEffect
+        delay(30000)
+        if (!isCompleted) {
+            onSuccess() // Erfolgreich überlebt
+        }
+    }
 
     // Spam Generator mit Speed Scaling
     LaunchedEffect(hasPermission, isCompleted) {
@@ -164,9 +201,9 @@ private fun NeuralRelayUI(
             val id = Random.nextInt(1000, 9999)
             val tag = if (isGolden) "${NOTIF_TAG_PREFIX}GOLDEN" else "${NOTIF_TAG_PREFIX}$id"
 
-            val title = if (isGolden) "⚠ SECURITY BREACH ID #$myKeyToFind" else "NODE_ERR: #$id"
-            val text = if (isGolden) "!!! TARGET KEY FOUND !!! TAP TO INTERCEPT"
-            else "Trash Data in Buffer $id. Swipe to clear."
+            // AI-Generated: Anonymisierte Benachrichtigungstitel
+            val title = "VAULT_SECURITY_ALERT"
+            val text = if (isGolden) "intercept_id: #$myKeyToFind" else "buffer_overflow_id: #$id"
 
             sendNotification(context, notificationManager, tag, title, text, isGolden)
 
@@ -233,11 +270,18 @@ private fun TargetNodeUI(
     notificationManager: NotificationManager,
     goldenKey: String,
     isCompleted: Boolean,
-    onFail: () -> Unit
+    onFail: () -> Unit,
+    onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
     var activeNotifs by remember { mutableIntStateOf(0) }
     var speedFactor by remember { mutableStateOf(1.0f) }
+
+    LaunchedEffect(isCompleted) {
+        if (isCompleted) return@LaunchedEffect
+        delay(30000)
+        if (!isCompleted) onSuccess()
+    }
 
     LaunchedEffect(hasPermission, isCompleted) {
         if (!hasPermission || isCompleted) return@LaunchedEffect
@@ -249,7 +293,11 @@ private fun TargetNodeUI(
             val isGolden = Random.nextInt(100) < 20
             val id = Random.nextInt(1000, 9999)
             val tag = if (isGolden) "${NOTIF_TAG_PREFIX}GOLDEN" else "${NOTIF_TAG_PREFIX}$id"
-            sendNotification(context, notificationManager, tag, "ID #$goldenKey", "...", isGolden)
+            
+            val title = "VAULT_SECURITY_ALERT"
+            val text = if (isGolden) "intercept_id: #$goldenKey" else "buffer_overflow_id: #$id"
+            
+            sendNotification(context, notificationManager, tag, title, text, isGolden)
             delay((Random.nextLong(1500, 2500) * speedFactor).toLong())
             speedFactor = (speedFactor * 0.96f).coerceAtLeast(0.4f)
         }

@@ -1,3 +1,4 @@
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.content.Context
@@ -8,16 +9,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -35,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -45,12 +39,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.uniprojekt.thevault.ui.theme.DarkGreen
-import com.uniprojekt.thevault.ui.theme.HousingColor
-import com.uniprojekt.thevault.ui.theme.LockedColor
-import com.uniprojekt.thevault.ui.theme.NeonGreen
-import com.uniprojekt.thevault.ui.theme.NeutralColor
-import com.uniprojekt.thevault.ui.theme.TextGreen
+import com.uniprojekt.thevault.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
@@ -187,175 +176,188 @@ fun GyroLockScreen(
         }
     }
 
-    Column(
+    // UI
+    // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(CyberBackground)
+            .crtOverlay()
     ) {
-        Text(
-            text = "Tresor knacken",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            color = NeonGreen
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Handy nach links/rechts drehen",
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextGreen
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Canvas(
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .aspectRatio(1f)
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val radius = size.minDimension / 2f * 0.9f
-            val numberRadius = radius * 0.78f
-            val textSize = radius * 0.13f
-            numberPaint.textSize = textSize
-
-            // Gehäuse
-            drawCircle(color = HousingColor, radius = radius, center = Offset(cx, cy))
-            drawCircle(
-                color = NeonGreen.copy(alpha = 0.55f),
-                radius = radius,
-                center = Offset(cx, cy),
-                style = Stroke(width = 3f)
+            Text(
+                text = "Tresor knacken",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = NeonGreen
             )
-            drawCircle(
-                color = DarkGreen,
-                radius = radius * 0.30f,
-                center = Offset(cx, cy)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Handy nach links/rechts drehen",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextGreen
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            for (k in 0 until DIAL_NUMBERS) {       // Ziffernkranz + Striche
-                val displayDeg = k * DEG_PER_NUMBER - dialAngleDeg
-                val rad = Math.toRadians(displayDeg.toDouble())
-                val sinV = sin(rad).toFloat()
-                val cosV = cos(rad).toFloat()
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .aspectRatio(1f)
+            ) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val radius = size.minDimension / 2f * 0.9f
+                val numberRadius = radius * 0.78f
+                val textSize = radius * 0.13f
+                numberPaint.textSize = textSize
 
-                val major = k % 5 == 0
-                val tickOuter = radius
-                val tickInner = radius - (if (major) radius * 0.10f else radius * 0.055f)
-                drawLine(
-                    color = NeonGreen.copy(alpha = if (major) 0.7f else 0.35f),
-                    start = Offset(cx + tickOuter * sinV, cy - tickOuter * cosV),
-                    end = Offset(cx + tickInner * sinV, cy - tickInner * cosV),
-                    strokeWidth = if (major) 3f else 1.5f
+                // Gehäuse
+                drawCircle(color = HousingColor, radius = radius, center = Offset(cx, cy))
+                drawCircle(
+                    color = NeonGreen.copy(alpha = 0.55f),
+                    radius = radius,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = 3f)
+                )
+                drawCircle(
+                    color = DarkGreen,
+                    radius = radius * 0.30f,
+                    center = Offset(cx, cy)
                 )
 
-                if (major) {
-                    val nx = cx + numberRadius * sinV
-                    val ny = cy - numberRadius * cosV
-                    val lockedIdx = targets.indexOf(k)
-                    val col = when {
-                        lockedIdx in 0 until lockedCount -> LockedColor       // bereits eingerastet
-                        !isSolved && k == targets[activeTargetIndex] -> NeonGreen   // aktuelles Ziel
-                        else -> NeutralColor
+                for (k in 0 until DIAL_NUMBERS) {       // Ziffernkranz + Striche
+                    val displayDeg = k * DEG_PER_NUMBER - dialAngleDeg
+                    val rad = Math.toRadians(displayDeg.toDouble())
+                    val sinV = sin(rad).toFloat()
+                    val cosV = cos(rad).toFloat()
+
+                    val major = k % 5 == 0
+                    val tickOuter = radius
+                    val tickInner = radius - (if (major) radius * 0.10f else radius * 0.055f)
+                    drawLine(
+                        color = NeonGreen.copy(alpha = if (major) 0.7f else 0.35f),
+                        start = Offset(cx + tickOuter * sinV, cy - tickOuter * cosV),
+                        end = Offset(cx + tickInner * sinV, cy - tickInner * cosV),
+                        strokeWidth = if (major) 3f else 1.5f
+                    )
+
+                    if (major) {
+                        val nx = cx + numberRadius * sinV
+                        val ny = cy - numberRadius * cosV
+                        val lockedIdx = targets.indexOf(k)
+                        val col = when {
+                            lockedIdx in 0 until lockedCount -> LockedColor       // bereits eingerastet
+                            !isSolved && k == targets[activeTargetIndex] -> NeonGreen   // aktuelles Ziel
+                            else -> NeutralColor
+                        }
+                        numberPaint.color = col.toArgb()
+                        drawIntoCanvas { canvas ->
+                            canvas.nativeCanvas.drawText(
+                                k.toString(),
+                                nx,
+                                ny + textSize / 3f,
+                                numberPaint
+                            )
+                        }
                     }
-                    numberPaint.color = col.toArgb()
-                    drawIntoCanvas { canvas ->
-                        canvas.nativeCanvas.drawText(
-                            k.toString(),
-                            nx,
-                            ny + textSize / 3f,
-                            numberPaint
+                }
+
+                val pointer = Path().apply {        // Zeiger
+                    moveTo(cx - radius * 0.07f, 2f)
+                    lineTo(cx + radius * 0.07f, 2f)
+                    lineTo(cx, radius * 0.15f)
+                    close()
+                }
+                drawPath(pointer, color = NeonGreen)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = currentNumber.toString().padStart(2, '0'),
+                fontSize = 44.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = FontFamily.Monospace,
+                color = NeonGreen
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                targets.forEachIndexed { i, t ->
+                    val locked = i < lockedCount
+                    val active = i == activeTargetIndex && !isSolved
+                    Text(
+                        text = t.toString().padStart(2, '0'),
+                        fontSize = 20.sp,
+                        fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Normal,
+                        fontFamily = FontFamily.Monospace,
+                        color = when {
+                            locked -> LockedColor
+                            active -> NeonGreen
+                            else -> NeutralColor
+                        }
+                    )
+                    if (i < targets.lastIndex) {
+                        Text(
+                            text = "  ->  ",
+                            fontSize = 18.sp,
+                            fontFamily = FontFamily.Monospace,
+                            color = NeutralColor
                         )
                     }
                 }
             }
 
-            val pointer = Path().apply {        // Zeiger
-                moveTo(cx - radius * 0.07f, 2f)
-                lineTo(cx + radius * 0.07f, 2f)
-                lineTo(cx, radius * 0.15f)
-                close()
-            }
-            drawPath(pointer, color = NeonGreen)
-        }
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = currentNumber.toString().padStart(2, '0'),
-            fontSize = 44.sp,
-            fontWeight = FontWeight.ExtraBold,
-            fontFamily = FontFamily.Monospace,
-            color = NeonGreen
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            targets.forEachIndexed { i, t ->
-                val locked = i < lockedCount
-                val active = i == activeTargetIndex && !isSolved
-                Text(
-                    text = t.toString().padStart(2, '0'),
-                    fontSize = 20.sp,
-                    fontWeight = if (active) FontWeight.ExtraBold else FontWeight.Normal,
-                    fontFamily = FontFamily.Monospace,
-                    color = when {
-                        locked -> LockedColor
-                        active -> NeonGreen
-                        else -> NeutralColor
-                    }
-                )
-                if (i < targets.lastIndex) {
-                    Text(
-                        text = "  ->  ",
-                        fontSize = 18.sp,
-                        fontFamily = FontFamily.Monospace,
-                        color = NeutralColor
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LinearProgressIndicator(
-            progress = { holdProgress },
-            color = NeonGreen,
-            modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .alpha(if (holdProgress > 0f) 1f else 0f)
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "Position halten...",
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextGreen,
-            modifier = Modifier.alpha(if (holdProgress > 0f) 1f else 0f)
-        )
-
-        if (!hasSensor) {
-            Spacer(modifier = Modifier.height(20.dp))
+            LinearProgressIndicator(
+                progress = { holdProgress },
+                color = NeonGreen,
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .alpha(if (holdProgress > 0f) 1f else 0f)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Kein Gyroskop gefunden.",
+                text = "Position halten...",
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
-                color = NeutralColor
+                color = TextGreen,
+                modifier = Modifier.alpha(if (holdProgress > 0f) 1f else 0f)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row {
-                Button(onClick = { if (!isSolved && isGameActive) dialAngleDeg -= DEG_PER_NUMBER }) {
-                    Text(text = "< Links")
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(onClick = { if (!isSolved && isGameActive) dialAngleDeg += DEG_PER_NUMBER }) {
-                    Text(text = "Rechts >")
+
+            if (!hasSensor) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Kein Gyroskop gefunden.",
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = NeutralColor
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    Button(onClick = { if (!isSolved && isGameActive) dialAngleDeg -= DEG_PER_NUMBER }) {
+                        Text(text = "< Links")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(onClick = { if (!isSolved && isGameActive) dialAngleDeg += DEG_PER_NUMBER }) {
+                        Text(text = "Rechts >")
+                    }
                 }
             }
+        }
+
+        if (!isGameActive) {
+            WaitingForTeamOverlay()
         }
     }
 }

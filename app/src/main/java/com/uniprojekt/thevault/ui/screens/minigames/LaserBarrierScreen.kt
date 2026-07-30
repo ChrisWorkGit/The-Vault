@@ -1,3 +1,4 @@
+// PROMPT-REFERENZ: [REF-ISSUE47-MINIGAME-BUGS-FIX]
 package com.uniprojekt.thevault.ui.screens.minigames
 
 import android.content.Context
@@ -11,13 +12,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -40,9 +36,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.uniprojekt.thevault.ui.theme.NeonGreen
-import com.uniprojekt.thevault.ui.theme.NeutralColor
-import com.uniprojekt.thevault.ui.theme.TextGreen
+import com.uniprojekt.thevault.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
@@ -140,106 +134,119 @@ fun LaserBarrierScreen(
         label = "laserAlpha"
     )
 
-    Column(
+    // UI
+    // AI-Generated: Globales Spiel-Start-Gate (Warten auf alle Spieler)
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(CyberBackground)
+            .crtOverlay()
     ) {
-        Text(
-            text = "Laserschranke umgehen",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            color = NeonGreen
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Hand über den Lichtsensor  legen und dunkel halten",
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextGreen
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Canvas(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp)
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            val w = size.width
-            val h = size.height
-            val margin = h * 0.08f
-            val gap = (h - 2 * margin) / (LASER_COUNT - 1)
+            Text(
+                text = "Laserschranke umgehen",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = NeonGreen
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Hand über den Lichtsensor  legen und dunkel halten",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextGreen
+            )
+            Spacer(modifier = Modifier.height(20.dp))
 
-            for (i in 0 until LASER_COUNT) {
-                val y = margin + i * gap
-                drawCircle(color = NeutralColor, radius = 8f, center = Offset(6f, y))
-                drawCircle(color = NeutralColor, radius = 8f, center = Offset(w - 6f, y))
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp)
+            ) {
+                val w = size.width
+                val h = size.height
+                val margin = h * 0.08f
+                val gap = (h - 2 * margin) / (LASER_COUNT - 1)
 
-                val beamColor = lerp(Color.Red, NeonGreen, holdProgress)
-                val beamAlpha = if (isDark) (pulse * (1f - holdProgress)).coerceIn(0.15f, 1f) else pulse
+                for (i in 0 until LASER_COUNT) {
+                    val y = margin + i * gap
+                    drawCircle(color = NeutralColor, radius = 8f, center = Offset(6f, y))
+                    drawCircle(color = NeutralColor, radius = 8f, center = Offset(w - 6f, y))
 
-                drawLine(
-                    color = beamColor.copy(alpha = beamAlpha * 0.25f),
-                    start = Offset(12f, y),
-                    end = Offset(w - 12f, y),
-                    strokeWidth = 14f,
-                    cap = StrokeCap.Round
+                    val beamColor = lerp(Color.Red, NeonGreen, holdProgress)
+                    val beamAlpha = if (isDark) (pulse * (1f - holdProgress)).coerceIn(0.15f, 1f) else pulse
+
+                    drawLine(
+                        color = beamColor.copy(alpha = beamAlpha * 0.25f),
+                        start = Offset(12f, y),
+                        end = Offset(w - 12f, y),
+                        strokeWidth = 14f,
+                        cap = StrokeCap.Round
+                    )
+                    drawLine(
+                        color = beamColor.copy(alpha = beamAlpha),
+                        start = Offset(12f, y),
+                        end = Offset(w - 12f, y),
+                        strokeWidth = 3.5f,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = when {
+                    isSolved -> "LASER DEAKTIVIERT"
+                    currentLux < 0f && !simulateCovered -> "Sensor wird gelesen..."
+                    isDark -> "ABGEDUNKELT - halten!"
+                    else -> "Zu hell (${effectiveLux.roundToInt()} lx)"
+                },
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                color = if (isDark || isSolved) NeonGreen else Color.Red
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LinearProgressIndicator(
+                progress = { holdProgress },
+                color = NeonGreen,
+                modifier = Modifier.fillMaxWidth(0.7f)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "${(holdProgress * 100).roundToInt()}% umgangen",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                color = TextGreen
+            )
+
+            if (!hasSensor) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Kein Lichtsensor gefunden.",
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = NeutralColor
                 )
-                drawLine(
-                    color = beamColor.copy(alpha = beamAlpha),
-                    start = Offset(12f, y),
-                    end = Offset(w - 12f, y),
-                    strokeWidth = 3.5f,
-                    cap = StrokeCap.Round
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = { if (isGameActive && !isSolved) simulateCovered = !simulateCovered }) {
+                    Text(text = if (simulateCovered) "Sensor freigeben" else "Sensor abdecken")
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = when {
-                isSolved -> "LASER DEAKTIVIERT"
-                currentLux < 0f && !simulateCovered -> "Sensor wird gelesen..."
-                isDark -> "ABGEDUNKELT - halten!"
-                else -> "Zu hell (${effectiveLux.roundToInt()} lx)"
-            },
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            color = if (isDark || isSolved) NeonGreen else Color.Red
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LinearProgressIndicator(
-            progress = { holdProgress },
-            color = NeonGreen,
-            modifier = Modifier.fillMaxWidth(0.7f)
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "${(holdProgress * 100).roundToInt()}% umgangen",
-            fontSize = 12.sp,
-            fontFamily = FontFamily.Monospace,
-            color = TextGreen
-        )
-
-        if (!hasSensor) {
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = "Kein Lichtsensor gefunden.",
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Monospace,
-                color = NeutralColor
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { if (isGameActive && !isSolved) simulateCovered = !simulateCovered }) {
-                Text(text = if (simulateCovered) "Sensor freigeben" else "Sensor abdecken")
-            }
+        if (!isGameActive) {
+            WaitingForTeamOverlay()
         }
     }
 }

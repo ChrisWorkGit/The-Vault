@@ -79,7 +79,7 @@ fun StatusPage() {
     ) {
         // AI-Generated: Fix Background Logo Rendering (Zentrierung & Skalierung)
         Text(
-            text = "[ VAULT ]",
+            text = "VAULT",
             color = NeonGreen,
             modifier = Modifier
                 .alpha(alpha)
@@ -100,7 +100,7 @@ fun StatusPage() {
             if (isGameActive) {
                 // MISSION AKTIV: Zeige Timer und Stats
                 Text(
-                    text = "TIME: $timer",
+                    text = "ELAPSED: $timer",
                     color = NeonGreen,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
